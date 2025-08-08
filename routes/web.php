@@ -3,5 +3,8 @@
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('interface-accueil');
 });
+
+Route::get('/pull-data', [App\Http\Controllers\AccueilProjectController::class, 'pullDataFromRedCap'])
+    ->name('pullDataFromRedCap');
