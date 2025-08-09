@@ -12,23 +12,22 @@
             ];
 
             $project_id = request()->get('project_id', '');
+
         @endphp
 
         <div class="row mb-3">
             <div class="col d-flex align-items-center">
                 <span class="me-2 fw-bold">Projets :</span>
                 @foreach ($projects as $project)
+                    @php
+                        $route = 'pullDataFromRedCap';
+                        if ($project['id'] == '38') {
+                            $route = 'pullDataFromRedCapAnGambiaeFINAL';
+                        } elseif ($project['id'] == '40') {
+                            $route = 'pullDataFromRedCapAllMosquitoesFINAL';
+                        }
 
-                @php
-
-                    $route = "pullDataFromRedCap";
-                    if ($project['id'] == "38" ){
-                        $route = 'pullDataFromRedCapAnGambiaeFINAL';
-                    } elseif ($project['id'] == "40") {
-                        $route = 'pullDataFromRedCapAllMosquitoesFINAL';
-                    }
-
-                @endphp
+                    @endphp
                     <a href="{{ route($route, ['project_id' => $project['id']]) }}"
                         class="btn btn-outline-primary me-2 {{ $project_id == $project['id'] ? 'active' : '' }}">
                         {{ $project['name'] }}
@@ -102,24 +101,20 @@
                         </tr>
                     </thead>
                     <tbody>
-
-                        @php
-                            $total_records_per_date_tablet = 0;
-                        @endphp
                         @foreach ($records_per_date_tablet as $date => $tablets)
                             @foreach ($tablets as $tablet => $count)
                                 <tr>
-                                    <td>{{ date("d/m/Y",strtotime($date)) }}</td>
+                                    <td>{{ date('d/m/Y', strtotime($date)) }}</td>
                                     <td>{{ Str::upper($tablet) }}</td>
                                     <td>{{ $count }}</td>
                                 </tr>
                             @endforeach
+
                             <tr>
                                 <td colspan="2"><strong class="text-danger">Total pour {{ date('d/m/Y', strtotime($date)) }}</strong></td>
-                                <td><strong class="text-danger">{{ array_sum( array_column($tablets, 'count')) }}</strong></td>
+                                <td><strong class="text-danger">{{ array_sum(array_column($tablets, 'count')) }}</strong></td>
                             </tr>
                         @endforeach
-                      
                     </tbody>
                 </table>
             </div>
@@ -169,7 +164,7 @@
 
                         @php
                             $total_species_bassila = array_sum($species_per_commune_bassila);
-                            $total_species_zogbodomey = array_sum($species_per_commune_zogbodomey);
+                            $total_species_zogbodomey = array_sum($species_per_commune_zogbodomey); 
                         @endphp
 
                         @foreach ($species_per_commune_bassila as $species => $count)
@@ -238,6 +233,7 @@
                             <td><strong class="text-danger">{{ array_sum($location_per_commune_bassila) }}</strong></td>
                             <td><strong class="text-danger">{{ array_sum($location_per_commune_zogbodomey) }}</strong></td>
                         </tr>
+                     
                     </tbody>
                 </table>
             </div>
@@ -286,6 +282,7 @@
                                 <td>{{ $sugar_feeding_per_commune_zogbodomey[$site] ?? 0 }}</td>
                             </tr>
                         @endforeach
+
                         <tr>
                             <td><strong class="text-danger">Total</strong></td>
                             <td><strong class="text-danger">{{ array_sum($sugar_feeding_per_commune_bassila) }}</strong>
@@ -338,6 +335,7 @@
                                 <td>{{ $colour_counts_zogbodomey[$index] ?? 0 }}</td>
                             </tr>
                         @endforeach
+
                         <tr>
                             <td><strong class="text-danger">Total</strong></td>
                             <td><strong class="text-danger">{{ array_sum($colour_counts_bassila) }}</strong></td>
@@ -347,58 +345,6 @@
                 </table>
             </div>
 
-        </div>
-
-
-        <div class="row">
-            <div class="col-12 mt-4">
-                <h2 class="text-center text-danger pb-2" style="border-bottom: 3px dashed #ccc">Distribution selon le
-                    paramètre "Sexe"</h2>
-            </div>
-        </div>
-        <div class="row mt-4">
-            <div class="col">
-                <h6>Répartition par <strong class="text-danger">Sexe</strong></h6>
-                <canvas id="sexChartAllCommunes" width="400" height="400"></canvas>
-            </div>
-            <div class="col">
-                <h6>Répartition par <strong class="text-danger">Sexe</strong> (Bassila)</h6>
-                <canvas id="sexChartBassila" width="400" height="400"></canvas>
-            </div>
-            <div class="col">
-                <h6>Répartition par <strong class="text-danger">Sexe</strong> (Zogbodomey)</h6>
-                <canvas id="sexChartZogbodomey" width="400" height="400"></canvas>
-            </div>
-        </div>
-
-        <div class="row mt-4">
-            <div class="col">
-                <h6>Tableau de répartition des moustiques par <strong class="text-danger">Sexe</strong> par commune</h6>
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Sexe</th>
-                            <th>N Moustiques (Bassila)</th>
-                            <th>N Moustiques (Zogbodomey)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($sex_per_commune_bassila as $sex => $count)
-                            <tr>
-                                <td>{{ $sex }}</td>
-                                <td>{{ $count }}</td>
-                                <td>{{ $sex_per_commune_zogbodomey[$sex] ?? 0 }}</td>
-                            </tr>
-                        @endforeach
-
-                        <tr>
-                            <td><strong class="text-danger">Total</strong></td>
-                            <td><strong class="text-danger">{{ array_sum($sex_per_commune_bassila) }}</strong></td>
-                            <td><strong class="text-danger">{{ array_sum($sex_per_commune_zogbodomey) }}</strong></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
         </div>
 
 
@@ -448,7 +394,6 @@
                                 <td>{{ $feeding_status_per_commune_zogbodomey[$site] ?? 0 }}</td>
                             </tr>
                         @endforeach
-
 
                         <tr>
                             <td><strong class="text-danger">Total</strong></td>
@@ -579,5 +524,5 @@
         </div>
 
 
-        </div>
+    </div>
 @endsection

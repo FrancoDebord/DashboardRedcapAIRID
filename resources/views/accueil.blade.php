@@ -5,12 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta name="description" content="DashboardProjectRedCap - Accueil" >
+    <meta name="description" content="DashboardProjectRedCap - Accueil">
     <meta name="keywords" content="RedCap, Dashboard, Projet, Accueil">
     <meta name="author" content="DashboardProjectRedCap Team">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="app_url" content="{{ url('/') }}">
-{{-- 
+    {{-- 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/v4-shims.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css">
@@ -51,7 +51,17 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
-                <form class="d-flex align-items-center me-3 " method="GET" action="{{ route('pullDataFromRedCap') }}"
+                @php
+                    $project_id = request()->get('project_id', '');
+
+                    $route = 'pullDataFromRedCap';
+                    if ($project['id'] == '38') {
+                        $route = 'pullDataFromRedCapAnGambiaeFINAL';
+                    } elseif ($project['id'] == '40') {
+                        $route = 'pullDataFromRedCapAllMosquitoesFINAL';
+                    }
+                @endphp
+                <form class="d-flex align-items-center me-3 " method="GET" action="{{ route($route) }}"
                     style="margin-bottom: 0; height: 40px;">
                     <div class="input-group input-group-sm" style="height: 32px;">
 
@@ -63,13 +73,14 @@
                                 ['id' => 40, 'name' => 'ATSB ALL MOSQUITOES FINAL'],
                             ];
 
-                            $project_id = request()->get('project_id', '');
                         @endphp
                         <select class="form-select form-control" name="project_id" aria-label="Sélectionner un projet"
                             style="height: 32px; padding-top: 0; padding-bottom: 0;">
                             <option selected disabled>Choisir un projet</option>
                             @foreach ($projects as $project)
-                                <option value="{{ $project['id'] }}" {{ $project['id'] == $project_id ? 'selected' : '' }}  >{{ $project['name'] }}</option>
+                                <option value="{{ $project['id'] }}"
+                                    {{ $project['id'] == $project_id ? 'selected' : '' }}>{{ $project['name'] }}
+                                </option>
                             @endforeach
                         </select>
                         <button class="btn btn-light btn-sm" type="submit"
@@ -80,7 +91,8 @@
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav ms-auto">
                         <li class="nav-item">
-                            <a class="nav-link active" aria-current="page" href="{{ route("pullDataFromRedCap") }}">Dashboard</a>
+                            <a class="nav-link active" aria-current="page"
+                                href="{{ route('pullDataFromRedCap') }}">Dashboard</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="#">Queries</a>
