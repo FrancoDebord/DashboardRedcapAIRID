@@ -33,7 +33,7 @@
     <header>
         <h1>Bienvenue sur la page d'accueil</h1>
 
-        <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top w-100">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-danger fixed-top w-100">
 
             {{-- <a class="navbar-brand d-flex align-items-center me-3" href="#">
                 <img src="{{ asset('images/logo.png') }}" alt="Logo" width="40" height="40"
@@ -55,13 +55,13 @@
                     $project_id = request()->get('project_id', '');
 
                     $route = 'pullDataFromRedCap';
-                    if ($project['id'] == '38') {
+                    if ($project_id == '38') {
                         $route = 'pullDataFromRedCapAnGambiaeFINAL';
-                    } elseif ($project['id'] == '40') {
+                    } elseif ($project_id == '40') {
                         $route = 'pullDataFromRedCapAllMosquitoesFINAL';
                     }
                 @endphp
-                <form class="d-flex align-items-center me-3 " method="GET" action="{{ route($route) }}"
+                {{-- <form class="d-flex align-items-center me-3 " method="GET" action="{{ route($route) }}"
                     style="margin-bottom: 0; height: 40px;">
                     <div class="input-group input-group-sm" style="height: 32px;">
 
@@ -86,16 +86,16 @@
                         <button class="btn btn-light btn-sm" type="submit"
                             style="height: 32px; padding-top: 0; padding-bottom: 0;">Valider</button>
                     </div>
-                </form>
+                </form> --}}
 
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav ms-auto">
                         <li class="nav-item">
                             <a class="nav-link active" aria-current="page"
-                                href="{{ route('pullDataFromRedCap') }}">Dashboard</a>
+                                href="{{ route('pullDataFromRedCapAnGambiaeFINAL', ['project_id' => 38]) }}">Dashboard</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">Queries</a>
+                            <a class="nav-link" href="{{ route("pullQueriesDataREDCapBaseline", ['project_id' => 38]) }}">Queries</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="#">Contact</a>

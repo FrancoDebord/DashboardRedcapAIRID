@@ -2138,4 +2138,202 @@ class AccueilProjectController extends Controller
             ));
         }
     }
+
+
+
+    public function pullQueriesDataREDCapBaseline(Request $request)
+    {
+
+
+        $projectId = $request->input('project_id');
+
+        // Set your REDCap API URL and token (replace with your actual values)
+        $apiUrl = 'https://redcap.airid-africa.com/api/';
+        $apiToken = ''; // You may want to store this securely and retrieve based on $projectId
+        $project_title = "";
+
+        // Example: Retrieve API token based on project ID (implement your own logic)
+        switch ($projectId) {
+            case 31:
+                $apiToken = '70D93561C9F0BAE16AE756A2D320A3BD';
+                $project_title = "ATSB An. Gambiae Baseline";
+                break;
+            case 35:
+                $apiToken = 'B58508382C6CF09A4CFD97A14643A44D';
+                $project_title = "ATSB Other Species Baseline";
+                break;
+            case 38:
+                $apiToken = '4400659EB9A8B164FF3E7D451930BCAC';
+                $project_title = "ATSB An. Gambiae FINAL";
+                break;
+            case 40:
+                $apiToken = 'C24E253F1A6E64982873F6E5A3F50D30';
+                $project_title = "ATSB ALL MOSQUITOES FINAL";
+                break;
+            // Add more cases as needed
+            default:
+                abort(400, 'Invalid project ID');
+        }
+
+        $metadataParams = [
+            'token' => $apiToken,
+            'content' => 'metadata',
+            'format' => 'json',
+            'returnFormat' => 'json'
+        ];
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $apiUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_VERBOSE, 0);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_AUTOREFERER, true);
+        curl_setopt($ch, CURLOPT_MAXREDIRS, 10);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
+        curl_setopt($ch, CURLOPT_FRESH_CONNECT, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($metadataParams, '', '&'));
+        $metadataResponse = curl_exec($ch);
+
+        $metadata = json_decode($metadataResponse, true);
+
+
+        $dataParams = [
+            'token' => $apiToken,
+            'content' => 'record',
+            'format' => 'json',
+            'type' => 'flat',
+            'rawOrLabel' => 'raw',
+            'returnFormat' => 'json'
+        ];
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $apiUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_VERBOSE, 0);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_AUTOREFERER, true);
+        curl_setopt($ch, CURLOPT_MAXREDIRS, 10);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
+        curl_setopt($ch, CURLOPT_FRESH_CONNECT, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($dataParams, '', '&'));
+        $output = curl_exec($ch);
+
+
+
+        $records = json_decode($output, true);
+
+
+
+
+        $issues = [];
+
+        $issues = [];
+
+        foreach ($records as $record) {
+            foreach ($metadata as $field) {
+                $fieldName = $field['field_name'];
+                $value = $record[$fieldName] ?? '';
+
+                // --- 1️⃣ Evaluate Branching Logic ---
+                $branchingPass = true;
+                if (!empty($field['branching_logic'])) {
+                    $logic = strtolower($field['branching_logic']); // normalize case
+
+                    // Extract conditions
+                    preg_match_all(
+                        '/\[(.*?)\]\s*(=|!=|>=|<=|>|<)\s*(\'[^\']*\'|\"[^\"]*\"|\d+(\.\d+)?)/i',
+                        $logic,
+                        $matches,
+                        PREG_SET_ORDER
+                    );
+
+                    $conditionsResults = [];
+                    foreach ($matches as $cond) {
+                        $depField = $cond[1];
+                        $operator = $cond[2];
+                        $rawValue = trim($cond[3], '\'"'); // remove quotes if any
+                        $recordValue = $record[$depField] ?? '';
+
+                        // Compare values
+                        switch ($operator) {
+                            case '=':
+                                $conditionsResults[] = ($recordValue == $rawValue);
+                                break;
+                            case '!=':
+                                $conditionsResults[] = ($recordValue != $rawValue);
+                                break;
+                            case '>':
+                                $conditionsResults[] = ($recordValue > $rawValue);
+                                break;
+                            case '<':
+                                $conditionsResults[] = ($recordValue < $rawValue);
+                                break;
+                            case '>=':
+                                $conditionsResults[] = ($recordValue >= $rawValue);
+                                break;
+                            case '<=':
+                                $conditionsResults[] = ($recordValue <= $rawValue);
+                                break;
+                        }
+                    }
+
+                    // Determine overall branchingPass based on logical operators in original string
+                    $tokens = preg_split('/\s+(and|or)\s+/i', $logic, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+
+                    // Replace condition placeholders with actual boolean results
+                    $condIndex = 0;
+                    foreach ($tokens as &$token) {
+                        $trimToken = trim($token);
+                        if (!in_array($trimToken, ['and', 'or'])) {
+                            $token = $conditionsResults[$condIndex++] ? 'true' : 'false';
+                        }
+                    }
+
+                    // Evaluate logical expression
+                    $expr = implode(' ', $tokens);
+                    $expr = str_replace(['and', 'or'], ['&&', '||'], $expr);
+                    $branchingPass = eval("return {$expr};");
+                }
+
+                // --- 2️⃣ Required Field Check ---
+                if ($branchingPass && $field['required_field'] === 'y') {
+                    if ($value === '') {
+                        $issues[] = "Record {$record['mosquito_code']}: Missing required field '$fieldName' (branching logic met)";
+                    } else {
+                        // --- 3️⃣ Data Validation Check ---
+                        if (!empty($field['text_validation_type_or_show_slider_number'])) {
+                            $validationType = $field['text_validation_type_or_show_slider_number'];
+
+                            if ($validationType === 'email' && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
+                                $issues[] = "Record {$record['mosquito_code']}: Invalid email in '$fieldName'";
+                            }
+                            if ($validationType === 'integer' && !ctype_digit($value)) {
+                                $issues[] = "Record {$record['mosquito_code']}: Non-integer value in '$fieldName'";
+                            }
+                            if ($validationType === 'date_ymd' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+                                $issues[] = "Record {$record['mosquito_code']}: Invalid date format in '$fieldName'";
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+
+
+
+
+
+        //share the issues with the view
+        view()->share('issues', $issues);
+
+        return view('page-queries-baseline', compact(
+            'records',
+            'metadata',
+            'project_title',
+            "issues"
+        ));
+    }
 }

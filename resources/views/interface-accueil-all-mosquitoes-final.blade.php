@@ -16,6 +16,9 @@
         @endphp
 
         <div class="row mb-3">
+
+            <input type="hidden" name="project_id" id="project_id" value="{{ $project_id }}">
+            
             <div class="col d-flex align-items-center">
                 <span class="me-2 fw-bold">Projets :</span>
                 @foreach ($projects as $project)
