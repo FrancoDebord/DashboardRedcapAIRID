@@ -1,15 +1,19 @@
 @extends('accueil')
 
+@section('js')
+    <script src="{{ asset('storage/assets/javascript.js') }}"></script>
+@endsection
+
 @section('content')
     <div class="container">
 
         @php
-            $projects = [
-                ['id' => 31, 'name' => 'ATSB An. Gambiae Baseline'],
-                ['id' => 35, 'name' => 'ATSB Other Species Baseline'],
-                ['id' => 38, 'name' => 'ATSB An. Gambiae FINAL'],
-                ['id' => 40, 'name' => 'ATSB ALL MOSQUITOES FINAL'],
-            ];
+            // $projects = [
+            //     ['id' => 31, 'name' => 'ATSB An. Gambiae Baseline'],
+            //     ['id' => 35, 'name' => 'ATSB Other Species Baseline'],
+            //     ['id' => 38, 'name' => 'ATSB An. Gambiae FINAL'],
+            //     ['id' => 40, 'name' => 'ATSB ALL MOSQUITOES FINAL'],
+            // ];
 
             $project_id = request()->get('project_id', '');
         @endphp
@@ -17,21 +21,20 @@
         <div class="row mb-3">
 
             <input type="hidden" name="project_id" id="project_id" value="{{ $project_id }}">
-            
+
             <div class="col d-flex align-items-center">
                 <span class="me-2 fw-bold">Projets :</span>
                 @foreach ($projects as $project)
+                    @php
 
-                @php
+                        $route = 'pullDataFromRedCap';
+                        if ($project['id'] == '38') {
+                            $route = 'pullDataFromRedCapAnGambiaeFINAL';
+                        } elseif ($project['id'] == '40') {
+                            $route = 'pullDataFromRedCapAllMosquitoesFINAL';
+                        }
 
-                    $route = "pullDataFromRedCap";
-                    if ($project['id'] == "38" ){
-                        $route = 'pullDataFromRedCapAnGambiaeFINAL';
-                    } elseif ($project['id'] == "40") {
-                        $route = 'pullDataFromRedCapAllMosquitoesFINAL';
-                    }
-
-                @endphp
+                    @endphp
                     <a href="{{ route($route, ['project_id' => $project['id']]) }}"
                         class="btn btn-outline-primary me-2 {{ $project_id == $project['id'] ? 'active' : '' }}">
                         {{ $project['name'] }}
@@ -43,7 +46,7 @@
 
         <div class="row mt-2 mb-3">
             <div class="col-12 ">
-                <h3 class="text-success">Projet visualisé : {{ $project_title }}</h3>
+                <h3 class="text-success">Projet visualisé : {{ $project_title ?? 'Aucun Projet' }}</h3>
             </div>
         </div>
 
@@ -74,21 +77,23 @@
                 <p class="text-center">Sélectionnez un projet pour visualiser les données collectées.</p>
             </div>
         </div>
+        
 
         <div class="row mt-2">
             <div class="col border custom-bg-all custom-box-padding" style="height: 150px;">
                 <h3>Tous les sites</h3>
-                <p>Total des enregistrements : <strong class="text-danger">{{ $total_records }}</strong> </p>
+                <p>Total des enregistrements : <strong class="text-danger">{{ $total_records ?? 0 }}</strong> </p>
             </div>
             <div class="col border custom-bg-bassila custom-box-padding     " style="height: 150px;">
                 <h3>Bassila</h3>
-                <p>Total des enregistrements à Bassila : <strong class="text-danger">{{ $total_records_bassila }}</strong>
+                <p>Total des enregistrements à Bassila : <strong
+                        class="text-danger">{{ $total_records_bassila ?? 0 }}</strong>
                 </p>
             </div>
             <div class="col border custom-bg-zogbodomey custom-box-padding  " style="height: 150px;">
                 <h3>Zogbodomey</h3>
                 <p>Total des enregistrements à Zogbodomey : <strong
-                        class="text-danger">{{ $total_records_zogbodomey }}</strong></p>
+                        class="text-danger">{{ $total_records_zogbodomey ?? 0 }}</strong></p>
             </div>
         </div>
 
@@ -112,17 +117,19 @@
                         @foreach ($records_per_date_tablet as $date => $tablets)
                             @foreach ($tablets as $tablet => $count)
                                 <tr>
-                                    <td>{{ date("d/m/Y",strtotime($date)) }}</td>
+                                    <td>{{ date('d/m/Y', strtotime($date)) }}</td>
                                     <td>{{ Str::upper($tablet) }}</td>
                                     <td>{{ $count }}</td>
                                 </tr>
                             @endforeach
-                            <tr>
-                                <td colspan="2"><strong class="text-danger">Total pour {{ date('d/m/Y', strtotime($date)) }}</strong></td>
-                                <td><strong class="text-danger">{{ array_sum( array_column($tablets, 'count')) }}</strong></td>
-                            </tr>
+                            {{-- <tr>
+                                <td colspan="2"><strong class="text-danger">Total pour
+                                        {{ date('d/m/Y', strtotime($date)) }}</strong></td>
+                                <td><strong class="text-danger">{{ array_sum(array_column($tablets, 'count')) }}</strong>
+                                </td>
+                            </tr> --}}
                         @endforeach
-                      
+
                     </tbody>
                 </table>
             </div>
@@ -239,7 +246,8 @@
                         <tr>
                             <td><strong class="text-danger">Total</strong></td>
                             <td><strong class="text-danger">{{ array_sum($location_per_commune_bassila) }}</strong></td>
-                            <td><strong class="text-danger">{{ array_sum($location_per_commune_zogbodomey) }}</strong></td>
+                            <td><strong class="text-danger">{{ array_sum($location_per_commune_zogbodomey) }}</strong>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -293,7 +301,8 @@
                             <td><strong class="text-danger">Total</strong></td>
                             <td><strong class="text-danger">{{ array_sum($sugar_feeding_per_commune_bassila) }}</strong>
                             </td>
-                            <td><strong class="text-danger">{{ array_sum($sugar_feeding_per_commune_zogbodomey) }}</strong>
+                            <td><strong
+                                    class="text-danger">{{ array_sum($sugar_feeding_per_commune_zogbodomey) }}</strong>
                             </td>
                         </tr>
                     </tbody>
@@ -457,7 +466,8 @@
                             <td><strong class="text-danger">Total</strong></td>
                             <td><strong class="text-danger">{{ array_sum($feeding_status_per_commune_bassila) }}</strong>
                             </td>
-                            <td><strong class="text-danger">{{ array_sum($feeding_status_per_commune_zogbodomey) }}</strong>
+                            <td><strong
+                                    class="text-danger">{{ array_sum($feeding_status_per_commune_zogbodomey) }}</strong>
                             </td>
                         </tr>
                     </tbody>
@@ -513,7 +523,8 @@
                             <td><strong class="text-danger">Total</strong></td>
                             <td><strong class="text-danger">{{ array_sum($gravid_status_per_commune_bassila) }}</strong>
                             </td>
-                            <td><strong class="text-danger">{{ array_sum($gravid_status_per_commune_zogbodomey) }}</strong>
+                            <td><strong
+                                    class="text-danger">{{ array_sum($gravid_status_per_commune_zogbodomey) }}</strong>
                             </td>
                         </tr>
                     </tbody>
@@ -572,7 +583,8 @@
                             <td><strong class="text-danger">Total</strong></td>
                             <td><strong class="text-danger">{{ array_sum($living_status_per_commune_bassila) }}</strong>
                             </td>
-                            <td><strong class="text-danger">{{ array_sum($living_status_per_commune_zogbodomey) }}</strong>
+                            <td><strong
+                                    class="text-danger">{{ array_sum($living_status_per_commune_zogbodomey) }}</strong>
                             </td>
                         </tr>
                     </tbody>
@@ -582,5 +594,5 @@
         </div>
 
 
-        </div>
+    </div>
 @endsection

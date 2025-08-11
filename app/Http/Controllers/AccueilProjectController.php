@@ -9,6 +9,8 @@ class AccueilProjectController extends Controller
 
     public function __construct()
     {
+
+        $this->middleware("auth");
         // if (!$this->isInternetAvailable()) {
         //     abort(503, 'Internet connection is required.');
         // }
@@ -23,6 +25,15 @@ class AccueilProjectController extends Controller
 
         global $code_zogbodomey;
         $code_zogbodomey = (($projectId === "38" || $projectId === "40") ? '2' : 'Z');
+
+        $projects = [
+            ['id' => 31, 'name' => 'ATSB An. Gambiae Baseline'],
+            ['id' => 35, 'name' => 'ATSB Other Species Baseline'],
+            ['id' => 38, 'name' => 'ATSB An. Gambiae FINAL'],
+            ['id' => 40, 'name' => 'ATSB ALL MOSQUITOES FINAL'],
+        ];
+
+        view()->share("projects", $projects);
     }
 
     private function isInternetAvailable()
@@ -54,7 +65,7 @@ class AccueilProjectController extends Controller
     public function pullDataFromRedCap(Request $request)
     {
 
-        $projectId = $request->input('project_id');
+        $projectId = $request->input('project_id') ?? 31;
 
         // Set your REDCap API URL and token (replace with your actual values)
         $apiUrl = 'https://redcap.airid-africa.com/api/';
@@ -1374,31 +1385,9 @@ class AccueilProjectController extends Controller
 
         // Set your REDCap API URL and token (replace with your actual values)
         $apiUrl = 'https://redcap.airid-africa.com/api/';
-        $apiToken = ''; // You may want to store this securely and retrieve based on $projectId
-        $project_title = "";
+        $apiToken = 'C24E253F1A6E64982873F6E5A3F50D30';
+        $project_title = "ATSB ALL MOSQUITOES FINAL";
 
-        // Example: Retrieve API token based on project ID (implement your own logic)
-        switch ($projectId) {
-            case 31:
-                $apiToken = '70D93561C9F0BAE16AE756A2D320A3BD';
-                $project_title = "ATSB An. Gambiae Baseline";
-                break;
-            case 35:
-                $apiToken = 'B58508382C6CF09A4CFD97A14643A44D';
-                $project_title = "ATSB Other Species Baseline";
-                break;
-            case 38:
-                $apiToken = '4400659EB9A8B164FF3E7D451930BCAC';
-                $project_title = "ATSB An. Gambiae FINAL";
-                break;
-            case 40:
-                $apiToken = 'C24E253F1A6E64982873F6E5A3F50D30';
-                $project_title = "ATSB ALL MOSQUITOES FINAL";
-                break;
-            // Add more cases as needed
-            default:
-                abort(400, 'Invalid project ID');
-        }
 
         $data = array(
             'token' => $apiToken,
@@ -2197,6 +2186,34 @@ class AccueilProjectController extends Controller
 
         $metadata = json_decode($metadataResponse, true);
 
+        $variables_anepas_considerer = [
+            "tablet_id",
+            "mosquito_code_arr_bas",
+            "mosquito_code_arr_pen",
+            "mosquito_code_cana1",
+            "mosquito_code_z_2",
+            "formulaire_de_terrain_complete",
+            "form_attribution_code_labo_complete",
+            "rsultat_des_tests_labo_complete",
+            "secondary_key",
+            "tablet_id",
+            "formulaire_de_terrain_complete",
+            "arrondissement_gen",
+            "nom_arrondissement_gen",
+            "village_general",
+            "nom_village_general",
+            "village_gen_bas",
+            "village_gen_zog",
+            "info_detaillee_moustique",
+            "detail_moustique",
+            "rsultat_des_tests_labo_complete",
+            "redcap_account_2",
+            "tablet_id_lab_2",
+            "date_entry",
+            "redcap_account",
+            "tablet_id_lab1",
+            "formulaire_de_terrain_complete",
+        ];
 
         $dataParams = [
             'token' => $apiToken,
@@ -2225,95 +2242,296 @@ class AccueilProjectController extends Controller
         $records = json_decode($output, true);
 
 
-
-
         $issues = [];
-
-        $issues = [];
+        $tablets = [];
+        $formulaires = [];
 
         foreach ($records as $record) {
             foreach ($metadata as $field) {
                 $fieldName = $field['field_name'];
-                $value = $record[$fieldName] ?? '';
 
-                // --- 1️⃣ Evaluate Branching Logic ---
-                $branchingPass = true;
-                if (!empty($field['branching_logic'])) {
-                    $logic = strtolower($field['branching_logic']); // normalize case
 
-                    // Extract conditions
-                    preg_match_all(
-                        '/\[(.*?)\]\s*(=|!=|>=|<=|>|<)\s*(\'[^\']*\'|\"[^\"]*\"|\d+(\.\d+)?)/i',
-                        $logic,
-                        $matches,
-                        PREG_SET_ORDER
-                    );
+                if (!in_array($fieldName, $variables_anepas_considerer)) {
 
-                    $conditionsResults = [];
-                    foreach ($matches as $cond) {
-                        $depField = $cond[1];
-                        $operator = $cond[2];
-                        $rawValue = trim($cond[3], '\'"'); // remove quotes if any
-                        $recordValue = $record[$depField] ?? '';
+                    $fieldLabel = $field['field_label'];
+                    $value = $record[$fieldName] ?? '';
+                    $form_name = $field["form_name"];
 
-                        // Compare values
-                        switch ($operator) {
-                            case '=':
-                                $conditionsResults[] = ($recordValue == $rawValue);
-                                break;
-                            case '!=':
-                                $conditionsResults[] = ($recordValue != $rawValue);
-                                break;
-                            case '>':
-                                $conditionsResults[] = ($recordValue > $rawValue);
-                                break;
-                            case '<':
-                                $conditionsResults[] = ($recordValue < $rawValue);
-                                break;
-                            case '>=':
-                                $conditionsResults[] = ($recordValue >= $rawValue);
-                                break;
-                            case '<=':
-                                $conditionsResults[] = ($recordValue <= $rawValue);
-                                break;
-                        }
+
+                    if (!in_array($form_name, $formulaires)) {
+
+                        $formulaires[] = $form_name;
                     }
 
-                    // Determine overall branchingPass based on logical operators in original string
-                    $tokens = preg_split('/\s+(and|or)\s+/i', $logic, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
 
-                    // Replace condition placeholders with actual boolean results
-                    $condIndex = 0;
-                    foreach ($tokens as &$token) {
-                        $trimToken = trim($token);
-                        if (!in_array($trimToken, ['and', 'or'])) {
-                            $token = $conditionsResults[$condIndex++] ? 'true' : 'false';
+                    // --- 1️⃣ Evaluate Branching Logic ---
+                    $branchingPass = true;
+                    if (!empty($field['branching_logic'])) {
+                        $logic = strtolower($field['branching_logic']); // normalize case
+
+                        // Extract conditions
+                        preg_match_all(
+                            '/\[(.*?)\]\s*(=|!=|>=|<=|>|<)\s*(\'[^\']*\'|\"[^\"]*\"|\d+(\.\d+)?)/i',
+                            $logic,
+                            $matches,
+                            PREG_SET_ORDER
+                        );
+
+                        $conditionsResults = [];
+                        foreach ($matches as $cond) {
+                            $depField = $cond[1];
+                            $operator = $cond[2];
+                            $rawValue = trim($cond[3], '\'"'); // remove quotes if any
+                            $recordValue = $record[$depField] ?? '';
+
+                            // Compare values
+                            switch ($operator) {
+                                case '=':
+                                    $conditionsResults[] = ($recordValue == $rawValue);
+                                    break;
+                                case '!=':
+                                    $conditionsResults[] = ($recordValue != $rawValue);
+                                    break;
+                                case '>':
+                                    $conditionsResults[] = ($recordValue > $rawValue);
+                                    break;
+                                case '<':
+                                    $conditionsResults[] = ($recordValue < $rawValue);
+                                    break;
+                                case '>=':
+                                    $conditionsResults[] = ($recordValue >= $rawValue);
+                                    break;
+                                case '<=':
+                                    $conditionsResults[] = ($recordValue <= $rawValue);
+                                    break;
+                            }
                         }
+
+                        // Determine overall branchingPass based on logical operators in original string
+                        $tokens = preg_split('/\s+(and|or)\s+/i', $logic, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+
+                        // Replace condition placeholders with actual boolean results
+                        $condIndex = 0;
+                        foreach ($tokens as &$token) {
+                            $trimToken = trim($token);
+                            if (!in_array($trimToken, ['and', 'or'])) {
+                                $token = $conditionsResults[$condIndex++] ? 'true' : 'false';
+                            }
+                        }
+
+                        // Evaluate logical expression
+                        $expr = implode(' ', $tokens);
+                        $expr = str_replace(['and', 'or'], ['&&', '||'], $expr);
+                        $branchingPass = eval("return {$expr};");
                     }
 
-                    // Evaluate logical expression
-                    $expr = implode(' ', $tokens);
-                    $expr = str_replace(['and', 'or'], ['&&', '||'], $expr);
-                    $branchingPass = eval("return {$expr};");
-                }
+                    // --- 2️⃣ Required Field Check ---
+                    if ($branchingPass && $field['required_field'] === 'y') {
+                        if ($value === '') {
 
-                // --- 2️⃣ Required Field Check ---
-                if ($branchingPass && $field['required_field'] === 'y') {
-                    if ($value === '') {
-                        $issues[] = "Record {$record['mosquito_code']}: Missing required field '$fieldName' (branching logic met)";
+                            $tablet = strtoupper($record["tablet_id"]);
+
+                            if (!in_array($tablet, $tablets)) {
+
+                                $tablets[] = $tablet;
+                            }
+
+                            $issues[] = [
+                                "query_code" => "REQUIRED_001",
+                                "query_date" => date("Y-m-d"),
+                                "mosquito_code" => $record['mosquito_code'],
+                                "tablet_id" => strtoupper($record["tablet_id"]),
+                                "initials" => strtoupper($record["initials"] ?? "NA"),
+                                "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                "form" => $form_name ?? "NA",
+                                "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> est vide alors que c'est un champ obligatoire et toutes les conditions sont remplies",
+                                "suggestion" => "Vérifier les valeurs des variables précédentes. Si vous les estimez juste, remplissez donc le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> aussi. ",
+                                "status" => "<strong class='text-danger'>Non Résolu</strong>",
+
+                            ];
+                            // $issues[] = "Record {$record['mosquito_code']}: Missing required field '$fieldName' (branching logic met)";
+                        } else {
+                            // --- 3️⃣ Data Validation Check ---
+                            if (!empty($field['text_validation_type_or_show_slider_number'])) {
+                                $validationType = $field['text_validation_type_or_show_slider_number'];
+
+                                if ($validationType === 'email' && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
+
+                                    $tablet = strtoupper($record["tablet_id"]);
+
+                                    if (!in_array($tablet, $tablets)) {
+
+                                        $tablets[] = $tablet;
+                                    }
+
+                                    $issues[] = [
+                                        "query_code" => "EMAIL_ERROR",
+                                        "query_date" => date("Y-m-d"),
+                                        "mosquito_code" => $record['mosquito_code'],
+                                        "tablet_id" => strtoupper($record["tablet_id"]),
+                                        "initials" => strtoupper($record["initials"] ?? "NA"),
+                                        "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                        "form" => $form_name ?? "NA",
+                                        "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                        "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> contient une adresse mail invalide",
+                                        "suggestion" => " Veuillez corriger l'adresse mail saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> pour qu'elle soit valide. exemple@gmail.com. ",
+                                        "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                    ];
+                                    // $issues[] = "Record {$record['mosquito_code']}: Invalid email in '$fieldName'";
+                                }
+                                if ($validationType === 'integer' && !ctype_digit($value)) {
+
+                                    $tablet = strtoupper($record["tablet_id"]);
+
+                                    if (!in_array($tablet, $tablets)) {
+
+                                        $tablets[] = $tablet;
+                                    }
+
+                                    $issues[] = [
+                                        "query_code" => "INTEGER_ERROR",
+                                        "query_date" => date("Y-m-d"),
+                                        "mosquito_code" => $record['mosquito_code'],
+                                        "tablet_id" => strtoupper($record["tablet_id"]),
+                                        "initials" => strtoupper($record["initials"] ?? "NA"),
+                                        "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                        "form" => $form_name ?? "NA",
+                                        "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                        "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> ne contient pas un nombre entier valide",
+                                        "suggestion" => " Veuillez corriger la donnée saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> pour qu'elle soit un nombre entier valide. ",
+
+                                        "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                    ];
+                                    // $issues[] = "Record {$record['mosquito_code']}: Non-integer value in '$fieldName'";
+                                }
+                                if ($validationType === 'number' && !is_numeric($value)) {
+                                    // $issues[] = "Record {$record['record_id']}: Non-numeric value in '$fieldName'";
+
+                                    $tablet = strtoupper($record["tablet_id"]);
+
+                                    if (!in_array($tablet, $tablets)) {
+
+                                        $tablets[] = $tablet;
+                                    }
+
+                                    $issues[] = [
+                                        "query_code" => "NUMBER_ERROR",
+                                        "query_date" => date("Y-m-d"),
+                                        "mosquito_code" => $record['mosquito_code'],
+                                        "tablet_id" => strtoupper($record["tablet_id"]),
+                                        "initials" => strtoupper($record["initials"] ?? "NA"),
+                                        "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                        "form" => $form_name ?? "NA",
+                                        "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                        "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> ne contient pas un nombre valide",
+                                        "suggestion" => " Veuillez corriger la donnée saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> pour qu'elle soit un nombre  valide.  ",
+                                        "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                    ];
+                                }
+
+                                if ($validationType === 'date_ymd' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+
+
+                                    $tablet = strtoupper($record["tablet_id"]);
+
+                                    if (!in_array($tablet, $tablets)) {
+
+                                        $tablets[] = $tablet;
+                                    }
+
+                                    $issues[] = [
+                                        "query_code" => "DATE_FORMAT_ERROR",
+                                        "query_date" => date("Y-m-d"),
+                                        "mosquito_code" => $record['mosquito_code'],
+                                        "tablet_id" => strtoupper($record["tablet_id"]),
+                                        "initials" => strtoupper($record["initials"] ?? "NA"),
+                                        "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                        "form" => $form_name ?? "NA",
+                                        "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                        "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> ne contient pas une date valide",
+                                        "suggestion" => " Veuillez corriger la donnée saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> pour qu'elle soit une date valide. ",
+                                        "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                    ];
+
+                                    // $issues[] = "Record {$record['mosquito_code']}: Invalid date format in '$fieldName'";
+                                }
+
+
+                                // --- 4️⃣ Min/Max Validation ---
+                                if ($value !== '') {
+                                    if (!empty($field['text_validation_min']) && is_numeric($value) && $value < $field['text_validation_min']) {
+
+                                        $tablet = strtoupper($record["tablet_id"]);
+
+                                        if (!in_array($tablet, $tablets)) {
+
+                                            $tablets[] = $tablet;
+                                        }
+
+                                        $issues[] = [
+                                            "query_code" => "NUMBER_RANGE_ERROR",
+                                            "query_date" => date("Y-m-d"),
+                                            "mosquito_code" => $record['mosquito_code'],
+                                            "tablet_id" => strtoupper($record["tablet_id"]),
+                                            "initials" => strtoupper($record["initials"] ?? "NA"),
+                                            "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                            "form" => $form_name ?? "NA",
+                                            "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                            "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> contient un nombre inférieur à <strong>'{$field['text_validation_min']}'</strong> qui est le minimum possible accepté.",
+                                            "suggestion" => " Veuillez corriger la donnée saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> pour qu'elle soit un nombre  valide supérieur ou égal au minimum possible <strong>  '{$field['text_validation_min']}'</strong>  ",
+                                            "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                        ];
+
+                                        // $issues[] = "Record {$record['record_id']}: Value in '$fieldName' is less than minimum allowed ({$field['text_validation_min']})";
+                                    }
+                                    if (!empty($field['text_validation_max']) && is_numeric($value) && $value > $field['text_validation_max']) {
+
+                                        $tablet = strtoupper($record["tablet_id"]);
+
+                                        if (!in_array($tablet, $tablets)) {
+
+                                            $tablets[] = $tablet;
+                                        }
+
+                                        $issues[] = [
+                                            "query_code" => "NUMBER_RANGE_ERROR",
+                                            "query_date" => date("Y-m-d"),
+                                            "mosquito_code" => $record['mosquito_code'],
+                                            "tablet_id" => strtoupper($record["tablet_id"]),
+                                            "initials" => strtoupper($record["initials"] ?? "NA"),
+                                            "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                            "form" => $form_name ?? "NA",
+                                            "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                            "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> contient un nombre supérieur à <strong>'{$field['text_validation_max']}'</strong> qui est le maximum possible accepté.",
+                                            "suggestion" => " Veuillez corriger la donnée saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> pour qu'elle soit un nombre  valide inférieur ou égal au maximum possible <strong>'{$field['text_validation_max']}'</strong>  ",
+                                            "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                        ];
+
+                                        // $issues[] = "Record {$record['record_id']}: Value in '$fieldName' exceeds maximum allowed ({$field['text_validation_max']})";
+                                    }
+                                }
+                            }
+                        }
                     } else {
-                        // --- 3️⃣ Data Validation Check ---
-                        if (!empty($field['text_validation_type_or_show_slider_number'])) {
-                            $validationType = $field['text_validation_type_or_show_slider_number'];
 
-                            if ($validationType === 'email' && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
-                                $issues[] = "Record {$record['mosquito_code']}: Invalid email in '$fieldName'";
-                            }
-                            if ($validationType === 'integer' && !ctype_digit($value)) {
-                                $issues[] = "Record {$record['mosquito_code']}: Non-integer value in '$fieldName'";
-                            }
-                            if ($validationType === 'date_ymd' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
-                                $issues[] = "Record {$record['mosquito_code']}: Invalid date format in '$fieldName'";
+                        if (!$branchingPass) {
+
+                            if ($value !== '') {
+
+                                $issues[] = [
+                                    "query_code" => "INCOHERENT",
+                                    "query_date" => date("Y-m-d"),
+                                    "mosquito_code" => $record['mosquito_code'],
+                                    "tablet_id" => strtoupper($record["tablet_id"]),
+                                    "initials" => strtoupper($record["initials"] ?? "NA"),
+                                    "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                    "form" => $form_name ?? "NA",
+                                    "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                    "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> a été renseigné alors que les conditions de base ne sont pas remplies. <strong>'[$logic]'</strong>",
+                                    "suggestion" => " Veuillez supprimer la donnée saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> ou revoir les variables précédentes pour que la condition <strong>'[$logic]'</strong> soit remplie. ",
+                                    "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                ];
                             }
                         }
                     }
@@ -2322,18 +2540,1460 @@ class AccueilProjectController extends Controller
         }
 
 
+        //share the issues with the view
+        session()->put("issues", $issues);
+        view()->share('issues', $issues);
+        view()->share('tablets', $tablets);
+        view()->share('formulaires', $formulaires);
+
+        return view('page-queries-baseline');
+    }
+
+    function pullQueriesDataREDCapAnGambiaeFINAL(Request $request)
+    {
+
+        // Set your REDCap API URL and token (replace with your actual values)
+        $apiUrl = 'https://redcap.airid-africa.com/api/';
+        $apiToken = '4400659EB9A8B164FF3E7D451930BCAC';
+
+        $metadataParams = [
+            'token' => $apiToken,
+            'content' => 'metadata',
+            'format' => 'json',
+            'returnFormat' => 'json'
+        ];
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $apiUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_VERBOSE, 0);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_AUTOREFERER, true);
+        curl_setopt($ch, CURLOPT_MAXREDIRS, 10);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
+        curl_setopt($ch, CURLOPT_FRESH_CONNECT, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($metadataParams, '', '&'));
+        $metadataResponse = curl_exec($ch);
+
+        $metadata = json_decode($metadataResponse, true);
 
 
+        $metadata_unique = array_slice($metadata, 0, 37);
+        $metadata_labo = array_slice($metadata, 37);
+
+
+
+        $dataParams = array(
+            'token' => $apiToken,
+            'content' => 'record',
+            'format' => 'json',
+            'returnFormat' => 'json',
+            'forms' => 'formulaire_de_terrain,form_attribution_code_labo,rsultat_des_tests_labo', // replace with the repeating instrument's name
+            // 'type' => 'flat',
+            'rawOrLabelHeaders' => 'raw',
+            'exportCheckboxLabel' => 'false',
+            'exportDataAccessGroups' => 'false',
+            'returnFormat' => 'json'
+
+        );
+
+        $variables_anepas_considerer = [
+            "arrondissement_gen",
+            "nom_arrondissement_gen",
+            "village_general",
+            "nom_village_general",
+            "village_gen_bas",
+            "village_gen_zog",
+            "info_detaillee_moustique",
+            "detail_moustique",
+            "rsultat_des_tests_labo_complete",
+            "redcap_account_2",
+            "tablet_id_lab_2",
+            "date_entry",
+            "redcap_account",
+            "tablet_id_lab1",
+            "formulaire_de_terrain_complete",
+        ];
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $apiUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_VERBOSE, 0);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_AUTOREFERER, true);
+        curl_setopt($ch, CURLOPT_MAXREDIRS, 10);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
+        curl_setopt($ch, CURLOPT_FRESH_CONNECT, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($dataParams, '', '&'));
+        $output = curl_exec($ch);
+
+
+
+        $redcapData = json_decode($output, true);
+
+
+        // Separate into two datasets
+        $infos_uniques = [];
+        $formulaire_resultats_labo = [];
+
+        foreach ($redcapData as $row) {
+            if (empty($row['redcap_repeat_instrument'])) {
+                $infos_uniques[] = $row;
+            } elseif ($row['redcap_repeat_instrument'] === "rsultat_des_tests_labo") {
+                $formulaire_resultats_labo[] = $row;
+            }
+        }
+
+        $issues = [];
+        $tablets = [];
+        $formulaires = [];
+
+        //Vérification des données uniques
+        foreach ($infos_uniques as $record) {
+            foreach ($metadata_unique as $field) {
+                $fieldName = $field['field_name'];
+
+
+                if (!in_array($fieldName, $variables_anepas_considerer)) {
+
+                    $fieldLabel = $field['field_label'];
+                    $value = $record[$fieldName] ?? '';
+                    $form_name = $field["form_name"];
+
+
+                    if (!in_array($form_name, $formulaires)) {
+
+                        $formulaires[] = $form_name;
+                    }
+
+
+                    // --- 1️⃣ Evaluate Branching Logic ---
+                    $branchingPass = true;
+                    if (!empty($field['branching_logic'])) {
+                        $logic = strtolower($field['branching_logic']); // normalize case
+
+                        // Extract conditions
+                        preg_match_all(
+                            '/\[(.*?)\]\s*(=|!=|>=|<=|>|<)\s*(\'[^\']*\'|\"[^\"]*\"|\d+(\.\d+)?)/i',
+                            $logic,
+                            $matches,
+                            PREG_SET_ORDER
+                        );
+
+                        $conditionsResults = [];
+                        foreach ($matches as $cond) {
+                            $depField = $cond[1];
+                            $operator = $cond[2];
+                            $rawValue = trim($cond[3], '\'"'); // remove quotes if any
+                            $recordValue = $record[$depField] ?? '';
+
+                            // Compare values
+                            switch ($operator) {
+                                case '=':
+                                    $conditionsResults[] = ($recordValue == $rawValue);
+                                    break;
+                                case '!=':
+                                    $conditionsResults[] = ($recordValue != $rawValue);
+                                    break;
+                                case '>':
+                                    $conditionsResults[] = ($recordValue > $rawValue);
+                                    break;
+                                case '<':
+                                    $conditionsResults[] = ($recordValue < $rawValue);
+                                    break;
+                                case '>=':
+                                    $conditionsResults[] = ($recordValue >= $rawValue);
+                                    break;
+                                case '<=':
+                                    $conditionsResults[] = ($recordValue <= $rawValue);
+                                    break;
+                            }
+                        }
+
+                        // Determine overall branchingPass based on logical operators in original string
+                        $tokens = preg_split('/\s+(and|or)\s+/i', $logic, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+
+                        // Replace condition placeholders with actual boolean results
+                        $condIndex = 0;
+                        foreach ($tokens as &$token) {
+                            $trimToken = trim($token);
+                            if (!in_array($trimToken, ['and', 'or'])) {
+                                $token = $conditionsResults[$condIndex++] ? 'true' : 'false';
+                            }
+                        }
+
+                        // Evaluate logical expression
+                        $expr = implode(' ', $tokens);
+                        $expr = str_replace(['and', 'or'], ['&&', '||'], $expr);
+                        $branchingPass = eval("return {$expr};");
+                    }
+
+                    // --- 2️⃣ Required Field Check ---
+                    if ($branchingPass && $field['required_field'] === 'y') {
+                        if ($value === '') {
+
+                            $tablet = strtoupper($record["tablet_id"]);
+
+                            if (!in_array($tablet, $tablets)) {
+
+                                $tablets[] = $tablet;
+                            }
+
+                            $issues[] = [
+                                "query_code" => "REQUIRED_001",
+                                "query_date" => date("Y-m-d"),
+                                "mosquito_code" => $record['mosquito_code'],
+                                "tablet_id" => strtoupper($record["tablet_id"]),
+                                "initials" => strtoupper($record["initials"] ?? "NA"),
+                                "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                "form" => $form_name ?? "NA",
+                                "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> est vide alors que c'est un champ obligatoire et toutes les conditions sont remplies",
+                                "suggestion" => "Vérifier les valeurs des variables précédentes. Si vous les estimez juste, remplissez donc le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> aussi. ",
+                                "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                            ];
+                            // $issues[] = "Record {$record['mosquito_code']}: Missing required field '$fieldName' (branching logic met)";
+                        } else {
+                            // --- 3️⃣ Data Validation Check ---
+                            if (!empty($field['text_validation_type_or_show_slider_number'])) {
+                                $validationType = $field['text_validation_type_or_show_slider_number'];
+
+                                if ($validationType === 'email' && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
+
+                                    $tablet = strtoupper($record["tablet_id"]);
+
+                                    if (!in_array($tablet, $tablets)) {
+
+                                        $tablets[] = $tablet;
+                                    }
+
+                                    $issues[] = [
+                                        "query_code" => "EMAIL_ERROR",
+                                        "query_date" => date("Y-m-d"),
+                                        "mosquito_code" => $record['mosquito_code'],
+                                        "tablet_id" => strtoupper($record["tablet_id"]),
+                                        "initials" => strtoupper($record["initials"] ?? "NA"),
+                                        "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                        "form" => $form_name ?? "NA",
+                                        "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                        "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> contient une adresse mail invalide",
+                                        "suggestion" => " Veuillez corriger l'adresse mail saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> pour qu'elle soit valide. exemple@gmail.com. ",
+                                        "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                    ];
+                                    // $issues[] = "Record {$record['mosquito_code']}: Invalid email in '$fieldName'";
+                                }
+                                if ($validationType === 'integer' && !ctype_digit($value)) {
+
+                                    $tablet = strtoupper($record["tablet_id"]);
+
+                                    if (!in_array($tablet, $tablets)) {
+
+                                        $tablets[] = $tablet;
+                                    }
+
+                                    $issues[] = [
+                                        "query_code" => "INTEGER_ERROR",
+                                        "query_date" => date("Y-m-d"),
+                                        "mosquito_code" => $record['mosquito_code'],
+                                        "tablet_id" => strtoupper($record["tablet_id"]),
+                                        "initials" => strtoupper($record["initials"] ?? "NA"),
+                                        "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                        "form" => $form_name ?? "NA",
+                                        "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                        "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> ne contient pas un nombre entier valide",
+                                        "suggestion" => " Veuillez corriger la donnée saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> pour qu'elle soit un nombre entier valide. ",
+                                        "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                    ];
+                                }
+
+                                if ($validationType === 'number' && !is_numeric($value)) {
+
+                                    $tablet = strtoupper($record["tablet_id"]);
+
+                                    if (!in_array($tablet, $tablets)) {
+
+                                        $tablets[] = $tablet;
+                                    }
+
+                                    $issues[] = [
+                                        "query_code" => "NUMBER_ERROR",
+                                        "query_date" => date("Y-m-d"),
+                                        "mosquito_code" => $record['mosquito_code'],
+                                        "tablet_id" => strtoupper($record["tablet_id"]),
+                                        "initials" => strtoupper($record["initials"] ?? "NA"),
+                                        "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                        "form" => $form_name ?? "NA",
+                                        "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                        "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> ne contient pas un nombre valide",
+                                        "suggestion" => " Veuillez corriger la donnée saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> pour qu'elle soit un nombre  valide.  ",
+                                        "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                    ];
+                                }
+
+                                if ($validationType === 'date_ymd' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+
+
+                                    $tablet = strtoupper($record["tablet_id"]);
+
+                                    if (!in_array($tablet, $tablets)) {
+
+                                        $tablets[] = $tablet;
+                                    }
+
+                                    $issues[] = [
+                                        "query_code" => "DATE_FORMAT_ERROR",
+                                        "query_date" => date("Y-m-d"),
+                                        "mosquito_code" => $record['mosquito_code'],
+                                        "tablet_id" => strtoupper($record["tablet_id"]),
+                                        "initials" => strtoupper($record["initials"] ?? "NA"),
+                                        "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                        "form" => $form_name ?? "NA",
+                                        "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                        "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> ne contient pas une date valide",
+                                        "suggestion" => " Veuillez corriger la donnée saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> pour qu'elle soit une date valide. exemple@gmail.com. ",
+                                        "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                    ];
+
+                                    // $issues[] = "Record {$record['mosquito_code']}: Invalid date format in '$fieldName'";
+                                }
+
+                                // --- 4️⃣ Min/Max Validation ---
+                                if ($value !== '') {
+                                    if (!empty($field['text_validation_min']) && is_numeric($value) && $value < $field['text_validation_min']) {
+
+                                        $tablet = strtoupper($record["tablet_id"]);
+
+                                        if (!in_array($tablet, $tablets)) {
+
+                                            $tablets[] = $tablet;
+                                        }
+
+                                        $issues[] = [
+                                            "query_code" => "NUMBER_RANGE_ERROR",
+                                            "query_date" => date("Y-m-d"),
+                                            "mosquito_code" => $record['mosquito_code'],
+                                            "tablet_id" => strtoupper($record["tablet_id"]),
+                                            "initials" => strtoupper($record["initials"] ?? "NA"),
+                                            "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                            "form" => $form_name ?? "NA",
+                                            "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                            "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> contient un nombre inférieur à <strong>'{$field['text_validation_min']}'</strong> qui est le minimum possible accepté.",
+                                            "suggestion" => " Veuillez corriger la donnée saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> pour qu'elle soit un nombre  valide supérieur ou égal au minimum possible <strong>  '{$field['text_validation_min']}'</strong>  ",
+                                            "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                        ];
+
+                                        // $issues[] = "Record {$record['record_id']}: Value in '$fieldName' is less than minimum allowed ({$field['text_validation_min']})";
+                                    }
+                                    if (!empty($field['text_validation_max']) && is_numeric($value) && $value > $field['text_validation_max']) {
+
+                                        $tablet = strtoupper($record["tablet_id"]);
+
+                                        if (!in_array($tablet, $tablets)) {
+
+                                            $tablets[] = $tablet;
+                                        }
+
+                                        $issues[] = [
+                                            "query_code" => "NUMBER_RANGE_ERROR",
+                                            "query_date" => date("Y-m-d"),
+                                            "mosquito_code" => $record['mosquito_code'],
+                                            "tablet_id" => strtoupper($record["tablet_id"]),
+                                            "initials" => strtoupper($record["initials"] ?? "NA"),
+                                            "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                            "form" => $form_name ?? "NA",
+                                            "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                            "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> contient un nombre supérieur à <strong>'{$field['text_validation_max']}'</strong> qui est le maximum possible accepté.",
+                                            "suggestion" => " Veuillez corriger la donnée saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> pour qu'elle soit un nombre  valide inférieur ou égal au maximum possible <strong>'{$field['text_validation_max']}'</strong>  ",
+                                            "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                        ];
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        //Vérification des données du laboratoire
+        foreach ($formulaire_resultats_labo as $record) {
+            foreach ($metadata_labo as $field) {
+                $fieldName = $field['field_name'];
+
+
+                if (!in_array($fieldName, $variables_anepas_considerer)) {
+
+                    $fieldLabel = $field['field_label'];
+                    $value = $record[$fieldName] ?? '';
+                    $form_name = $field["form_name"];
+
+                    if (!in_array($form_name, $formulaires)) {
+
+                        $formulaires[] = $form_name;
+                    }
+
+
+                    // --- 1️⃣ Evaluate Branching Logic ---
+                    $branchingPass = true;
+                    if (!empty($field['branching_logic'])) {
+                        $logic = strtolower($field['branching_logic']); // normalize case
+
+                        // Extract conditions
+                        preg_match_all(
+                            '/\[(.*?)\]\s*(=|!=|>=|<=|>|<)\s*(\'[^\']*\'|\"[^\"]*\"|\d+(\.\d+)?)/i',
+                            $logic,
+                            $matches,
+                            PREG_SET_ORDER
+                        );
+
+                        $conditionsResults = [];
+                        foreach ($matches as $cond) {
+                            $depField = $cond[1];
+                            $operator = $cond[2];
+                            $rawValue = trim($cond[3], '\'"'); // remove quotes if any
+                            $recordValue = $record[$depField] ?? '';
+
+                            // Compare values
+                            switch ($operator) {
+                                case '=':
+                                    $conditionsResults[] = ($recordValue == $rawValue);
+                                    break;
+                                case '!=':
+                                    $conditionsResults[] = ($recordValue != $rawValue);
+                                    break;
+                                case '>':
+                                    $conditionsResults[] = ($recordValue > $rawValue);
+                                    break;
+                                case '<':
+                                    $conditionsResults[] = ($recordValue < $rawValue);
+                                    break;
+                                case '>=':
+                                    $conditionsResults[] = ($recordValue >= $rawValue);
+                                    break;
+                                case '<=':
+                                    $conditionsResults[] = ($recordValue <= $rawValue);
+                                    break;
+                            }
+                        }
+
+                        // Determine overall branchingPass based on logical operators in original string
+                        $tokens = preg_split('/\s+(and|or)\s+/i', $logic, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+
+                        // Replace condition placeholders with actual boolean results
+                        $condIndex = 0;
+                        foreach ($tokens as &$token) {
+                            $trimToken = trim($token);
+                            if (!in_array($trimToken, ['and', 'or'])) {
+                                $token = $conditionsResults[$condIndex++] ? 'true' : 'false';
+                            }
+                        }
+
+                        // Evaluate logical expression
+                        $expr = implode(' ', $tokens);
+                        $expr = str_replace(['and', 'or'], ['&&', '||'], $expr);
+                        $branchingPass = eval("return {$expr};");
+                    }
+
+                    // --- 2️⃣ Required Field Check ---
+                    if ($branchingPass && $field['required_field'] === 'y') {
+                        if ($value === '') {
+
+                            $tablet = strtoupper($record["tablet_id"]);
+
+                            if (!in_array($tablet, $tablets)) {
+
+                                $tablets[] = $tablet;
+                            }
+
+                            $issues[] = [
+                                "query_code" => "REQUIRED_001",
+                                "query_date" => date("Y-m-d"),
+                                "mosquito_code" => $record['mosquito_code'],
+                                "tablet_id" => strtoupper($record["tablet_id"]),
+                                "initials" => strtoupper($record["initials"] ?? "NA"),
+                                "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                "form" => $form_name ?? "NA",
+                                "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> est vide alors que c'est un champ obligatoire et toutes les conditions sont remplies",
+                                "suggestion" => "Vérifier les valeurs des variables précédentes. Si vous les estimez juste, remplissez donc le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> aussi. ",
+                                "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                            ];
+                            // $issues[] = "Record {$record['mosquito_code']}: Missing required field '$fieldName' (branching logic met)";
+                        } else {
+                            // --- 3️⃣ Data Validation Check ---
+                            if (!empty($field['text_validation_type_or_show_slider_number'])) {
+                                $validationType = $field['text_validation_type_or_show_slider_number'];
+
+                                if ($validationType === 'email' && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
+
+                                    $tablet = strtoupper($record["tablet_id"]);
+
+                                    if (!in_array($tablet, $tablets)) {
+
+                                        $tablets[] = $tablet;
+                                    }
+
+                                    $issues[] = [
+                                        "query_code" => "EMAIL_ERROR",
+                                        "query_date" => date("Y-m-d"),
+                                        "mosquito_code" => $record['mosquito_code'],
+                                        "tablet_id" => strtoupper($record["tablet_id"]),
+                                        "initials" => strtoupper($record["initials"] ?? "NA"),
+                                        "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                        "form" => $form_name ?? "NA",
+                                        "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                        "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> contient une adresse mail invalide",
+                                        "suggestion" => " Veuillez corriger l'adresse mail saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> pour qu'elle soit valide. exemple@gmail.com. ",
+                                        "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                    ];
+                                    // $issues[] = "Record {$record['mosquito_code']}: Invalid email in '$fieldName'";
+                                }
+                                if ($validationType === 'integer' && !ctype_digit($value)) {
+
+                                    $tablet = strtoupper($record["tablet_id"]);
+
+                                    if (!in_array($tablet, $tablets)) {
+
+                                        $tablets[] = $tablet;
+                                    }
+
+                                    $issues[] = [
+                                        "query_code" => "INTEGER_ERROR",
+                                        "query_date" => date("Y-m-d"),
+                                        "mosquito_code" => $record['mosquito_code'],
+                                        "tablet_id" => strtoupper($record["tablet_id"]),
+                                        "initials" => strtoupper($record["initials"] ?? "NA"),
+                                        "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                        "form" => $form_name ?? "NA",
+                                        "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                        "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> ne contient pas un nombre entier valide",
+                                        "suggestion" => " Veuillez corriger la donnée saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> pour qu'elle soit un nombre entier valide. ",
+                                        "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                    ];
+                                    // $issues[] = "Record {$record['mosquito_code']}: Non-integer value in '$fieldName'";
+                                }
+
+                                if ($validationType === 'number' && !is_numeric($value)) {
+
+                                    $tablet = strtoupper($record["tablet_id"]);
+
+                                    if (!in_array($tablet, $tablets)) {
+
+                                        $tablets[] = $tablet;
+                                    }
+
+                                    $issues[] = [
+                                        "query_code" => "NUMBER_ERROR",
+                                        "query_date" => date("Y-m-d"),
+                                        "mosquito_code" => $record['mosquito_code'],
+                                        "tablet_id" => strtoupper($record["tablet_id"]),
+                                        "initials" => strtoupper($record["initials"] ?? "NA"),
+                                        "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                        "form" => $form_name ?? "NA",
+                                        "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                        "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> ne contient pas un nombre valide",
+                                        "suggestion" => " Veuillez corriger la donnée saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> pour qu'elle soit un nombre  valide.  ",
+                                        "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                    ];
+                                }
+
+                                if ($validationType === 'date_ymd' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+
+
+                                    $tablet = strtoupper($record["tablet_id"]);
+
+                                    if (!in_array($tablet, $tablets)) {
+
+                                        $tablets[] = $tablet;
+                                    }
+
+                                    $issues[] = [
+                                        "query_code" => "DATE_FORMAT_ERROR",
+                                        "query_date" => date("Y-m-d"),
+                                        "mosquito_code" => $record['mosquito_code'],
+                                        "tablet_id" => strtoupper($record["tablet_id"]),
+                                        "initials" => strtoupper($record["initials"] ?? "NA"),
+                                        "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                        "form" => $form_name ?? "NA",
+                                        "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                        "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> ne contient pas une date valide",
+                                        "suggestion" => " Veuillez corriger la donnée saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> pour qu'elle soit une date valide. ",
+                                        "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                    ];
+
+                                    // $issues[] = "Record {$record['mosquito_code']}: Invalid date format in '$fieldName'";
+                                }
+
+                                // --- 4️⃣ Min/Max Validation ---
+                                if ($value !== '') {
+                                    if (!empty($field['text_validation_min']) && is_numeric($value) && $value < $field['text_validation_min']) {
+
+                                        $tablet = strtoupper($record["tablet_id"]);
+
+                                        if (!in_array($tablet, $tablets)) {
+
+                                            $tablets[] = $tablet;
+                                        }
+
+                                        $issues[] = [
+                                            "query_code" => "NUMBER_RANGE_ERROR",
+                                            "query_date" => date("Y-m-d"),
+                                            "mosquito_code" => $record['mosquito_code'],
+                                            "tablet_id" => strtoupper($record["tablet_id"]),
+                                            "initials" => strtoupper($record["initials"] ?? "NA"),
+                                            "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                            "form" => $form_name ?? "NA",
+                                            "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                            "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> contient un nombre inférieur à <strong>'{$field['text_validation_min']}'</strong> qui est le minimum possible accepté.",
+                                            "suggestion" => " Veuillez corriger la donnée saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> pour qu'elle soit un nombre  valide supérieur ou égal au minimum possible <strong>  '{$field['text_validation_min']}'</strong>  ",
+                                            "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                        ];
+
+                                        // $issues[] = "Record {$record['record_id']}: Value in '$fieldName' is less than minimum allowed ({$field['text_validation_min']})";
+                                    }
+                                    if (!empty($field['text_validation_max']) && is_numeric($value) && $value > $field['text_validation_max']) {
+
+                                        $tablet = strtoupper($record["tablet_id"]);
+
+                                        if (!in_array($tablet, $tablets)) {
+
+                                            $tablets[] = $tablet;
+                                        }
+
+                                        $issues[] = [
+                                            "query_code" => "NUMBER_RANGE_ERROR",
+                                            "query_date" => date("Y-m-d"),
+                                            "mosquito_code" => $record['mosquito_code'],
+                                            "tablet_id" => strtoupper($record["tablet_id"]),
+                                            "initials" => strtoupper($record["initials"] ?? "NA"),
+                                            "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                            "form" => $form_name ?? "NA",
+                                            "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                            "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> contient un nombre supérieur à <strong>'{$field['text_validation_max']}'</strong> qui est le maximum possible accepté.",
+                                            "suggestion" => " Veuillez corriger la donnée saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> pour qu'elle soit un nombre  valide inférieur ou égal au maximum possible <strong>'{$field['text_validation_max']}'</strong>  ",
+                                            "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                        ];
+
+                                        // $issues[] = "Record {$record['record_id']}: Value in '$fieldName' exceeds maximum allowed ({$field['text_validation_max']})";
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+
+                        if (!$branchingPass) {
+
+                            if ($value !== '') {
+
+                                $issues[] = [
+                                    "query_code" => "INCOHERENT",
+                                    "query_date" => date("Y-m-d"),
+                                    "mosquito_code" => $record['mosquito_code'],
+                                    "tablet_id" => strtoupper($record["tablet_id"]),
+                                    "initials" => strtoupper($record["initials"] ?? "NA"),
+                                    "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                    "form" => $form_name ?? "NA",
+                                    "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                    "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> a été renseigné alors que les conditions de base ne sont pas remplies. <strong>'[$logic]'</strong>",
+                                    "suggestion" => " Veuillez supprimer la donnée saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> ou revoir les variables précédentes pour que la condition <strong>'[$logic]'</strong> soit remplie. ",
+                                    "status" => "<strong class='text-danger'>Non Résolu</strong>"
+                                ];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        //share the issues with the view
+        session()->put("issues", $issues);
+        view()->share('issues', $issues);
+        view()->share('tablets', $tablets);
+        view()->share('formulaires', $formulaires);
+
+        return view("page-queries-baseline", ["project_id_courant" => 38]);
+    }
+
+    function pullQueriesDataREDCapALlMosquitoesFINAL(Request $request)
+    {
+
+        // Set your REDCap API URL and token (replace with your actual values)
+        $apiUrl = 'https://redcap.airid-africa.com/api/';
+        $apiToken = 'C24E253F1A6E64982873F6E5A3F50D30';
+
+        $metadataParams = [
+            'token' => $apiToken,
+            'content' => 'metadata',
+            'format' => 'json',
+            'returnFormat' => 'json'
+        ];
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $apiUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_VERBOSE, 0);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_AUTOREFERER, true);
+        curl_setopt($ch, CURLOPT_MAXREDIRS, 10);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
+        curl_setopt($ch, CURLOPT_FRESH_CONNECT, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($metadataParams, '', '&'));
+        $metadataResponse = curl_exec($ch);
+
+        $metadata = json_decode($metadataResponse, true);
+
+
+        $metadata_unique = array_slice($metadata, 0, 22);
+        $metadata_summary = array_slice($metadata, 22);
+
+        // Variables à enlever : rappel_info, n_total_moustique_rep, message_nbre_incoherent,message_coherent,rappel_info_2
+        //info_location,info_living_status, info_sugar_feeding_status, info_colour_status, info_feeding_status,info_gravid_status
+        // info_sex_status
+
+
+        $variables_anepas_considerer = [
+            "rappel_info",
+            "n_total_moustique_rep",
+            "message_nbre_incoherent",
+            "message_coherent",
+            "rappel_info_2",
+            "info_location",
+            "info_living_status",
+            "info_sugar_feeding_status",
+            "info_colour_status",
+            "info_feeding_status",
+            "info_gravid_status",
+            "info_sex_status",
+            "arrondissement_gen",
+            "nom_arrondissement_gen",
+            "village_general",
+            "nom_village_general",
+            "village_gen_bas",
+            "village_gen_zog",
+            "info_detaillee_moustique",
+            "detail_moustique",
+            "rsultat_des_tests_labo_complete",
+            "redcap_account_2",
+            "tablet_id_lab_2",
+            "date_entry",
+            "redcap_account",
+            "tablet_id_lab1",
+            "formulaire_de_terrain_complete",
+        ];
+
+
+
+
+        $dataParams = array(
+            'token' => $apiToken,
+            'content' => 'record',
+            'format' => 'json',
+            'returnFormat' => 'json',
+            'forms' => 'infos_de_base_menage,summary_detail_mosquitoes', // replace with the repeating instrument's name
+            // 'type' => 'flat',
+            'rawOrLabelHeaders' => 'raw',
+            'exportCheckboxLabel' => 'false',
+            'exportDataAccessGroups' => 'false',
+            'returnFormat' => 'json'
+
+        );
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $apiUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_VERBOSE, 0);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_AUTOREFERER, true);
+        curl_setopt($ch, CURLOPT_MAXREDIRS, 10);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
+        curl_setopt($ch, CURLOPT_FRESH_CONNECT, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($dataParams, '', '&'));
+        $output = curl_exec($ch);
+
+
+
+        $redcapData = json_decode($output, true);
+
+
+        // Separate into two datasets
+        $infos_uniques = [];
+        $formulaire_summary_data_mosquitoes = [];
+
+        foreach ($redcapData as $row) {
+            if (empty($row['redcap_repeat_instrument'])) {
+                $infos_uniques[] = $row;
+            } elseif ($row['redcap_repeat_instrument'] === "summary_detail_mosquitoes") {
+                $formulaire_summary_data_mosquitoes[] = $row;
+            }
+        }
+
+        $issues = [];
+        $tablets = [];
+        $formulaires = [];
+
+        //Vérification des données uniques
+        foreach ($infos_uniques as $record) {
+            foreach ($metadata_unique as $field) {
+                $fieldName = $field['field_name'];
+
+
+                if (!in_array($fieldName, $variables_anepas_considerer)) {
+
+                    $fieldLabel = $field['field_label'];
+                    $value = $record[$fieldName] ?? '';
+                    $form_name = $field["form_name"];
+
+
+                    if (!in_array($form_name, $formulaires)) {
+
+                        $formulaires[] = $form_name;
+                    }
+
+
+                    // --- 1️⃣ Evaluate Branching Logic ---
+                    $branchingPass = true;
+                    if (!empty($field['branching_logic'])) {
+                        $logic = strtolower($field['branching_logic']); // normalize case
+
+                        // Extract conditions
+                        preg_match_all(
+                            '/\[(.*?)\]\s*(=|!=|>=|<=|>|<)\s*(\'[^\']*\'|\"[^\"]*\"|\d+(\.\d+)?)/i',
+                            $logic,
+                            $matches,
+                            PREG_SET_ORDER
+                        );
+
+                        $conditionsResults = [];
+                        foreach ($matches as $cond) {
+                            $depField = $cond[1];
+                            $operator = $cond[2];
+                            $rawValue = trim($cond[3], '\'"'); // remove quotes if any
+                            $recordValue = $record[$depField] ?? '';
+
+                            // Compare values
+                            switch ($operator) {
+                                case '=':
+                                    $conditionsResults[] = ($recordValue == $rawValue);
+                                    break;
+                                case '!=':
+                                    $conditionsResults[] = ($recordValue != $rawValue);
+                                    break;
+                                case '>':
+                                    $conditionsResults[] = ($recordValue > $rawValue);
+                                    break;
+                                case '<':
+                                    $conditionsResults[] = ($recordValue < $rawValue);
+                                    break;
+                                case '>=':
+                                    $conditionsResults[] = ($recordValue >= $rawValue);
+                                    break;
+                                case '<=':
+                                    $conditionsResults[] = ($recordValue <= $rawValue);
+                                    break;
+                            }
+                        }
+
+                        // Determine overall branchingPass based on logical operators in original string
+                        $tokens = preg_split('/\s+(and|or)\s+/i', $logic, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+
+                        // Replace condition placeholders with actual boolean results
+                        $condIndex = 0;
+                        foreach ($tokens as &$token) {
+                            $trimToken = trim($token);
+                            if (!in_array($trimToken, ['and', 'or'])) {
+                                $token = $conditionsResults[$condIndex++] ? 'true' : 'false';
+                            }
+                        }
+
+                        // Evaluate logical expression
+                        $expr = implode(' ', $tokens);
+                        $expr = str_replace(['and', 'or'], ['&&', '||'], $expr);
+                        $branchingPass = eval("return {$expr};");
+                    }
+
+                    // --- 2️⃣ Required Field Check ---
+                    if ($branchingPass && $field['required_field'] === 'y') {
+                        if ($value === '') {
+
+                            $tablet = strtoupper($record["tablet_id"]);
+
+                            if (!in_array($tablet, $tablets)) {
+
+                                $tablets[] = $tablet;
+                            }
+
+                            $issues[] = [
+                                "query_code" => "REQUIRED_001",
+                                "query_date" => date("Y-m-d"),
+                                "mosquito_code" => $record['mosquito_code'],
+                                "tablet_id" => strtoupper($record["tablet_id"]),
+                                "initials" => strtoupper($record["initials"] ?? "NA"),
+                                "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                "form" => $form_name ?? "NA",
+                                "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> est vide alors que c'est un champ obligatoire et toutes les conditions sont remplies",
+                                "suggestion" => "Vérifier les valeurs des variables précédentes. Si vous les estimez juste, remplissez donc le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> aussi. ",
+                                "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                            ];
+                            // $issues[] = "Record {$record['mosquito_code']}: Missing required field '$fieldName' (branching logic met)";
+                        } else {
+                            // --- 3️⃣ Data Validation Check ---
+                            if (!empty($field['text_validation_type_or_show_slider_number'])) {
+                                $validationType = $field['text_validation_type_or_show_slider_number'];
+
+                                if ($validationType === 'email' && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
+
+                                    $tablet = strtoupper($record["tablet_id"]);
+
+                                    if (!in_array($tablet, $tablets)) {
+
+                                        $tablets[] = $tablet;
+                                    }
+
+                                    $issues[] = [
+                                        "query_code" => "EMAIL_ERROR",
+                                        "query_date" => date("Y-m-d"),
+                                        "mosquito_code" => $record['mosquito_code'],
+                                        "tablet_id" => strtoupper($record["tablet_id"]),
+                                        "initials" => strtoupper($record["initials"] ?? "NA"),
+                                        "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                        "form" => $form_name ?? "NA",
+                                        "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                        "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> contient une adresse mail invalide",
+                                        "suggestion" => " Veuillez corriger l'adresse mail saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> pour qu'elle soit valide. exemple@gmail.com. ",
+                                        "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                    ];
+                                    // $issues[] = "Record {$record['mosquito_code']}: Invalid email in '$fieldName'";
+                                }
+                                if ($validationType === 'integer' && !ctype_digit($value)) {
+
+                                    $tablet = strtoupper($record["tablet_id"]);
+
+                                    if (!in_array($tablet, $tablets)) {
+
+                                        $tablets[] = $tablet;
+                                    }
+
+                                    $issues[] = [
+                                        "query_code" => "INTEGER_ERROR",
+                                        "query_date" => date("Y-m-d"),
+                                        "mosquito_code" => $record['mosquito_code'],
+                                        "tablet_id" => strtoupper($record["tablet_id"]),
+                                        "initials" => strtoupper($record["initials"] ?? "NA"),
+                                        "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                        "form" => $form_name ?? "NA",
+                                        "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                        "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> ne contient pas un nombre entier valide",
+                                        "suggestion" => " Veuillez corriger la donnée saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> pour qu'elle soit un nombre entier valide. ",
+                                        "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                    ];
+                                }
+
+                                if ($validationType === 'number' && !is_numeric($value)) {
+
+                                    $tablet = strtoupper($record["tablet_id"]);
+
+                                    if (!in_array($tablet, $tablets)) {
+
+                                        $tablets[] = $tablet;
+                                    }
+
+                                    $issues[] = [
+                                        "query_code" => "NUMBER_ERROR",
+                                        "query_date" => date("Y-m-d"),
+                                        "mosquito_code" => $record['mosquito_code'],
+                                        "tablet_id" => strtoupper($record["tablet_id"]),
+                                        "initials" => strtoupper($record["initials"] ?? "NA"),
+                                        "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                        "form" => $form_name ?? "NA",
+                                        "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                        "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> ne contient pas un nombre valide",
+                                        "suggestion" => " Veuillez corriger la donnée saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> pour qu'elle soit un nombre  valide.  ",
+                                        "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                    ];
+                                }
+
+                                if ($validationType === 'date_ymd' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+
+
+                                    $tablet = strtoupper($record["tablet_id"]);
+
+                                    if (!in_array($tablet, $tablets)) {
+
+                                        $tablets[] = $tablet;
+                                    }
+
+                                    $issues[] = [
+                                        "query_code" => "DATE_FORMAT_ERROR",
+                                        "query_date" => date("Y-m-d"),
+                                        "mosquito_code" => $record['mosquito_code'],
+                                        "tablet_id" => strtoupper($record["tablet_id"]),
+                                        "initials" => strtoupper($record["initials"] ?? "NA"),
+                                        "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                        "form" => $form_name ?? "NA",
+                                        "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                        "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> ne contient pas une date valide",
+                                        "suggestion" => " Veuillez corriger la donnée saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> pour qu'elle soit une date valide. exemple@gmail.com. ",
+                                        "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                    ];
+
+                                    // $issues[] = "Record {$record['mosquito_code']}: Invalid date format in '$fieldName'";
+                                }
+
+                                // --- 4️⃣ Min/Max Validation ---
+                                if ($value !== '') {
+                                    if (!empty($field['text_validation_min']) && is_numeric($value) && $value < $field['text_validation_min']) {
+
+                                        $tablet = strtoupper($record["tablet_id"]);
+
+                                        if (!in_array($tablet, $tablets)) {
+
+                                            $tablets[] = $tablet;
+                                        }
+
+                                        $issues[] = [
+                                            "query_code" => "NUMBER_RANGE_ERROR",
+                                            "query_date" => date("Y-m-d"),
+                                            "mosquito_code" => $record['mosquito_code'],
+                                            "tablet_id" => strtoupper($record["tablet_id"]),
+                                            "initials" => strtoupper($record["initials"] ?? "NA"),
+                                            "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                            "form" => $form_name ?? "NA",
+                                            "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                            "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> contient un nombre inférieur à <strong>'{$field['text_validation_min']}'</strong> qui est le minimum possible accepté.",
+                                            "suggestion" => " Veuillez corriger la donnée saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> pour qu'elle soit un nombre  valide supérieur ou égal au minimum possible <strong>  '{$field['text_validation_min']}'</strong>  ",
+                                            "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                        ];
+
+                                        // $issues[] = "Record {$record['record_id']}: Value in '$fieldName' is less than minimum allowed ({$field['text_validation_min']})";
+                                    }
+                                    if (!empty($field['text_validation_max']) && is_numeric($value) && $value > $field['text_validation_max']) {
+
+                                        $tablet = strtoupper($record["tablet_id"]);
+
+                                        if (!in_array($tablet, $tablets)) {
+
+                                            $tablets[] = $tablet;
+                                        }
+
+                                        $issues[] = [
+                                            "query_code" => "NUMBER_RANGE_ERROR",
+                                            "query_date" => date("Y-m-d"),
+                                            "mosquito_code" => $record['mosquito_code'],
+                                            "tablet_id" => strtoupper($record["tablet_id"]),
+                                            "initials" => strtoupper($record["initials"] ?? "NA"),
+                                            "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                            "form" => $form_name ?? "NA",
+                                            "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                            "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> contient un nombre supérieur à <strong>'{$field['text_validation_max']}'</strong> qui est le maximum possible accepté.",
+                                            "suggestion" => " Veuillez corriger la donnée saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> pour qu'elle soit un nombre  valide inférieur ou égal au maximum possible <strong>'{$field['text_validation_max']}'</strong>  ",
+                                            "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                        ];
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        //Vérification des données du laboratoire
+        foreach ($formulaire_summary_data_mosquitoes as $record) {
+
+             $index_ligne = array_search($record["mosquito_code"], array_column($infos_uniques, "mosquito_code"));
+
+            foreach ($metadata_summary as $field) {
+
+                $fieldName = $field['field_name'];
+
+               
+                if (!in_array($fieldName, $variables_anepas_considerer)) {
+
+
+
+
+                    $fieldLabel = $field['field_label'];
+                    $value = $record[$fieldName] ?? '';
+                    $form_name = $field["form_name"];
+
+                    if (!in_array($form_name, $formulaires)) {
+
+                        $formulaires[] = $form_name;
+                    }
+
+
+                    // --- 1️⃣ Evaluate Branching Logic ---
+                    $branchingPass = true;
+                    // if (!empty($field['branching_logic'])) {
+                    //     $logic = strtolower($field['branching_logic']); // normalize case
+
+                    //     // Extract conditions
+                    //     preg_match_all(
+                    //         '/\[(.*?)\]\s*(=|!=|>=|<=|>|<)\s*(\'[^\']*\'|\"[^\"]*\"|\d+(\.\d+)?)/i',
+                    //         $logic,
+                    //         $matches,
+                    //         PREG_SET_ORDER
+                    //     );
+
+                    //     $conditionsResults = [];
+                    //     foreach ($matches as $cond) {
+                    //         $depField = $cond[1];
+                    //         $operator = $cond[2];
+                    //         $rawValue = trim($cond[3], '\'"'); // remove quotes if any
+                    //         $recordValue = $record[$depField] ?? '';
+
+                    //         // Compare values
+                    //         switch ($operator) {
+                    //             case '=':
+                    //                 $conditionsResults[] = ($recordValue == $rawValue);
+                    //                 break;
+                    //             case '!=':
+                    //                 $conditionsResults[] = ($recordValue != $rawValue);
+                    //                 break;
+                    //             case '>':
+                    //                 $conditionsResults[] = ($recordValue > $rawValue);
+                    //                 break;
+                    //             case '<':
+                    //                 $conditionsResults[] = ($recordValue < $rawValue);
+                    //                 break;
+                    //             case '>=':
+                    //                 $conditionsResults[] = ($recordValue >= $rawValue);
+                    //                 break;
+                    //             case '<=':
+                    //                 $conditionsResults[] = ($recordValue <= $rawValue);
+                    //                 break;
+                    //         }
+                    //     }
+
+
+
+                    //     // Determine overall branchingPass based on logical operators in original string
+                    //     $tokens = preg_split('/\s+(and|or)\s+/i', $logic, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+
+                    //     // Replace condition placeholders with actual boolean results
+                    //     $condIndex = 0;
+
+                    //       if (empty($conditionsResults)) {
+
+                    //         dd($fieldLabel, $fieldName,$tokens);
+                    //     }
+
+                    //     foreach ($tokens as &$token) {
+                    //         $trimToken = trim($token);
+                    //         if (!in_array($trimToken, ['and', 'or'])) {
+                    //             $token = $conditionsResults[$condIndex++] ? 'true' : 'false';
+                    //         }
+                    //     }
+
+                    //     // Evaluate logical expression
+                    //     $expr = implode(' ', $tokens);
+                    //     $expr = str_replace(['and', 'or'], ['&&', '||'], $expr);
+                    //     $branchingPass = eval("return {$expr};");
+                    // }
+
+                    // --- 2️⃣ Required Field Check ---
+                    if ($branchingPass && $field['required_field'] === 'y') {
+                        if ($value === '') {
+
+                            $tablet = strtoupper($record["tablet_id"]);
+
+                            if (!in_array($tablet, $tablets)) {
+
+                                $tablets[] = $tablet;
+                            }
+
+                            $issues[] = [
+                                "query_code" => "REQUIRED_001",
+                                "query_date" => date("Y-m-d"),
+                                "mosquito_code" => $record['mosquito_code'],
+                                "tablet_id" => strtoupper($infos_uniques[$index_ligne]["tablet_id"]),
+                                "initials" => strtoupper($infos_uniques[$index_ligne]["initials"] ?? "NA"),
+                                "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                "form" => $form_name ?? "NA",
+                                "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> est vide alors que c'est un champ obligatoire et toutes les conditions sont remplies",
+                                "suggestion" => "Vérifier les valeurs des variables précédentes. Si vous les estimez juste, remplissez donc le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> aussi. ",
+                                "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                            ];
+                            // $issues[] = "Record {$record['mosquito_code']}: Missing required field '$fieldName' (branching logic met)";
+                        } else {
+                            // --- 3️⃣ Data Validation Check ---
+                            if (!empty($field['text_validation_type_or_show_slider_number'])) {
+                                $validationType = $field['text_validation_type_or_show_slider_number'];
+
+                                if ($validationType === 'email' && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
+
+                                    $tablet = strtoupper($record["tablet_id"]);
+
+                                    if (!in_array($tablet, $tablets)) {
+
+                                        $tablets[] = $tablet;
+                                    }
+
+                                    $issues[] = [
+                                        "query_code" => "EMAIL_ERROR",
+                                        "query_date" => date("Y-m-d"),
+                                        "mosquito_code" => $record['mosquito_code'],
+                                        "tablet_id" => strtoupper($infos_uniques[$index_ligne]["tablet_id"]),
+                                        "initials" => strtoupper($infos_uniques[$index_ligne]["initials"] ?? "NA"),
+                                        "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                        "form" => $form_name ?? "NA",
+                                        "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                        "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> contient une adresse mail invalide",
+                                        "suggestion" => " Veuillez corriger l'adresse mail saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> pour qu'elle soit valide. exemple@gmail.com. ",
+                                        "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                    ];
+                                    // $issues[] = "Record {$record['mosquito_code']}: Invalid email in '$fieldName'";
+                                }
+                                if ($validationType === 'integer' && !ctype_digit($value)) {
+
+                                    $tablet = strtoupper($record["tablet_id"]);
+
+                                    if (!in_array($tablet, $tablets)) {
+
+                                        $tablets[] = $tablet;
+                                    }
+
+                                    $issues[] = [
+                                        "query_code" => "INTEGER_ERROR",
+                                        "query_date" => date("Y-m-d"),
+                                        "mosquito_code" => $record['mosquito_code'],
+                                        "tablet_id" => strtoupper($infos_uniques[$index_ligne]["tablet_id"]),
+                                        "initials" => strtoupper($infos_uniques[$index_ligne]["initials"] ?? "NA"),
+                                        "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                        "form" => $form_name ?? "NA",
+                                        "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                        "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> ne contient pas un nombre entier valide",
+                                        "suggestion" => " Veuillez corriger la donnée saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> pour qu'elle soit un nombre entier valide. ",
+                                        "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                    ];
+                                    // $issues[] = "Record {$record['mosquito_code']}: Non-integer value in '$fieldName'";
+                                }
+
+                                if ($validationType === 'number' && !is_numeric($value)) {
+
+                                    $tablet = strtoupper($record["tablet_id"]);
+
+                                    if (!in_array($tablet, $tablets)) {
+
+                                        $tablets[] = $tablet;
+                                    }
+
+                                    $issues[] = [
+                                        "query_code" => "NUMBER_ERROR",
+                                        "query_date" => date("Y-m-d"),
+                                        "mosquito_code" => $record['mosquito_code'],
+                                        "tablet_id" => strtoupper($infos_uniques[$index_ligne]["tablet_id"]),
+                                        "initials" => strtoupper($infos_uniques[$index_ligne]["initials"] ?? "NA"),
+                                        "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                        "form" => $form_name ?? "NA",
+                                        "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                        "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> ne contient pas un nombre valide",
+                                        "suggestion" => " Veuillez corriger la donnée saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> pour qu'elle soit un nombre  valide.  ",
+                                        "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                    ];
+                                }
+
+                                if ($validationType === 'date_ymd' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+
+
+                                    $tablet = strtoupper($record["tablet_id"]);
+
+                                    if (!in_array($tablet, $tablets)) {
+
+                                        $tablets[] = $tablet;
+                                    }
+
+                                    $issues[] = [
+                                        "query_code" => "DATE_FORMAT_ERROR",
+                                        "query_date" => date("Y-m-d"),
+                                        "mosquito_code" => $record['mosquito_code'],
+                                        "tablet_id" => strtoupper($infos_uniques[$index_ligne]["tablet_id"]),
+                                        "initials" => strtoupper($infos_uniques[$index_ligne]["initials"] ?? "NA"),
+                                        "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                        "form" => $form_name ?? "NA",
+                                        "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                        "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> ne contient pas une date valide",
+                                        "suggestion" => " Veuillez corriger la donnée saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> pour qu'elle soit une date valide. ",
+                                        "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                    ];
+
+                                    // $issues[] = "Record {$record['mosquito_code']}: Invalid date format in '$fieldName'";
+                                }
+
+                                // --- 4️⃣ Min/Max Validation ---
+                                if ($value !== '') {
+                                    if (!empty($field['text_validation_min']) && is_numeric($value) && $value < $field['text_validation_min']) {
+
+                                        $tablet = strtoupper($record["tablet_id"]);
+
+                                        if (!in_array($tablet, $tablets)) {
+
+                                            $tablets[] = $tablet;
+                                        }
+
+                                        $issues[] = [
+                                            "query_code" => "NUMBER_RANGE_ERROR",
+                                            "query_date" => date("Y-m-d"),
+                                            "mosquito_code" => $record['mosquito_code'],
+                                            "tablet_id" => strtoupper($infos_uniques[$index_ligne]["tablet_id"]),
+                                            "initials" => strtoupper($infos_uniques[$index_ligne]["initials"] ?? "NA"),
+                                            "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                            "form" => $form_name ?? "NA",
+                                            "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                            "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> contient un nombre inférieur à <strong>'{$field['text_validation_min']}'</strong> qui est le minimum possible accepté.",
+                                            "suggestion" => " Veuillez corriger la donnée saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> pour qu'elle soit un nombre  valide supérieur ou égal au minimum possible <strong>  '{$field['text_validation_min']}'</strong>  ",
+                                            "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                        ];
+
+                                        // $issues[] = "Record {$record['record_id']}: Value in '$fieldName' is less than minimum allowed ({$field['text_validation_min']})";
+                                    }
+                                    if (!empty($field['text_validation_max']) && is_numeric($value) && $value > $field['text_validation_max']) {
+
+                                        $tablet = strtoupper($record["tablet_id"]);
+
+                                        if (!in_array($tablet, $tablets)) {
+
+                                            $tablets[] = $tablet;
+                                        }
+
+                                        $issues[] = [
+                                            "query_code" => "NUMBER_RANGE_ERROR",
+                                            "query_date" => date("Y-m-d"),
+                                            "mosquito_code" => $record['mosquito_code'],
+                                            "tablet_id" => strtoupper($infos_uniques[$index_ligne]["tablet_id"]),
+                                            "initials" => strtoupper($infos_uniques[$index_ligne]["initials"] ?? "NA"),
+                                            "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                            "form" => $form_name ?? "NA",
+                                            "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                            "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> contient un nombre supérieur à <strong>'{$field['text_validation_max']}'</strong> qui est le maximum possible accepté.",
+                                            "suggestion" => " Veuillez corriger la donnée saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> pour qu'elle soit un nombre  valide inférieur ou égal au maximum possible <strong>'{$field['text_validation_max']}'</strong>  ",
+                                            "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                                        ];
+
+                                        // $issues[] = "Record {$record['record_id']}: Value in '$fieldName' exceeds maximum allowed ({$field['text_validation_max']})";
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+
+                        if (!$branchingPass) {
+
+                            if ($value !== '') {
+
+                                $issues[] = [
+                                    "query_code" => "INCOHERENT",
+                                    "query_date" => date("Y-m-d"),
+                                    "mosquito_code" => $record['mosquito_code'],
+                                    "tablet_id" => strtoupper($infos_uniques[$index_ligne]["tablet_id"]),
+                                    "initials" => strtoupper($infos_uniques[$index_ligne]["initials"] ?? "NA"),
+                                    "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                                    "form" => $form_name ?? "NA",
+                                    "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                                    "description" => "Le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> a été renseigné alors que les conditions de base ne sont pas remplies. <strong>'[$logic]'</strong>",
+                                    "suggestion" => " Veuillez supprimer la donnée saisie dans le champ <strong>'$fieldLabel ($fieldName) du formulaire $form_name'</strong> ou revoir les variables précédentes pour que la condition <strong>'[$logic]'</strong> soit remplie. ",
+                                    "status" => "<strong class='text-danger'>Non Résolu</strong>"
+                                ];
+                            }
+                        }
+                    }
+                }
+            }
+
+          
+        }
+
+        // Vérification des données par paramètre collecté avec les différentes modalités. 
+        //Ici, il s'agira de vérifier que la somme des valeurs pour toutes les modalités d'un paramètre doit correspondre 
+        // au nombre total de moustiques déclarés pour l'espèce en question
+        //Je mets en derniere position dans les sous-tableaux, le nombre maximal à utiliser pour la comparaison de la somme des valeurs de chaque modalité
+
+
+        $list_parametres_modalites = [
+            'location' => ["number_indoors", "number_outdoors", "n_mosquito_specie"],
+            'living_status' => ["n_live", "n_dead", "n_mosquito_specie"],
+            'sugar_feeding_status' => ["n_sugar_fed", "n_sugar_unfed", "n_mosquito_specie"],
+            'couleur' => ["n_blue", "n_green", "n_green_blue", "n_sugar_fed"],
+            'feeding_status' => ["n_unfed", "n_bfed", "n_unk_feeding_status", "n_mosquito_specie"],
+            'gravid_status' => ["n_not_gravid", "n_semi_gravid", "n_gravid", "n_unk_gravid_status", "n_mosquito_specie"],
+            'Sex' => ["n_male", "n_female", "n_mosquito_specie"],
+        ];
+
+
+        //Vérification des données du laboratoire
+        $compteur_ligne = 0;
+        foreach ($formulaire_summary_data_mosquitoes as $record) {
+
+            $compteur_ligne = array_search($record["mosquito_code"], array_column($infos_uniques, "mosquito_code"));
+
+            foreach ($list_parametres_modalites as $parametre => $list_modalites_et_total) {
+
+
+                $variable_total_max = $list_modalites_et_total[count($list_modalites_et_total) - 1]; // La derniere variable est le total maxi pour la comparaison
+
+                $valeur_total_max = (int) $record[$variable_total_max]; // La valeur maximale pour comparaison
+
+                $total_modalites = 0;
+
+                //Ici, nous allons faire la somme des valeurs des modalités du parametre
+                for ($i = 0; $i < count($list_modalites_et_total) - 1; ++$i) {
+
+                    $value_modalite_i = (int) $record[$list_modalites_et_total[$i]];
+
+                    $total_modalites += $value_modalite_i;
+                }
+
+
+                if ($total_modalites != $valeur_total_max) {
+
+                    $modalites = array_slice($list_modalites_et_total, 0, count($list_modalites_et_total) - 1);
+                    $modalites = implode(",", $modalites);
+
+                    $issues[] = [
+                        "query_code" => "INACURRATE_SUM",
+                        "query_date" => date("Y-m-d"),
+                        "mosquito_code" => $infos_uniques[$compteur_ligne]['mosquito_code'],
+                        "tablet_id" => strtoupper($infos_uniques[$compteur_ligne]["tablet_id"]),
+                        "initials" => strtoupper($infos_uniques[$compteur_ligne]["initials"] ?? "NA"),
+                        "redcap_event_name" => $infos_uniques[$compteur_ligne]['redcap_event_name'] ?? "NA",
+                        "form" => "summary_detail_mosquitoes",
+                        "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                        "description" => "La somme (<strong class='text-danger'>'$total_modalites'</strong>) des différentes valeurs des modalités <strong class='text-danger'>'$modalites'</strong> du paramètre <strong class='text-danger'>'$parametre'</strong>  ne correspond pas au nombre de total de moustiques déclarés pour l'espèce qui est <strong>'$valeur_total_max'</strong>.",
+                        "suggestion" => "Vérifier les valeurs des différentes modalités et le nombre total de moustiques déclarés pour l'espèce afin d'ajuster les valeurs pour le paramètre <strong>'$parametre'</strong>. La règle est que la somme doit correspondre au total déclaré",
+                        "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                    ];
+                }
+            }
+
+        }
 
 
         //share the issues with the view
+        session()->put("issues", $issues);
         view()->share('issues', $issues);
+        view()->share('tablets', $tablets);
+        view()->share('formulaires', $formulaires);
 
-        return view('page-queries-baseline', compact(
-            'records',
-            'metadata',
-            'project_title',
-            "issues"
-        ));
+        return view("page-queries-baseline", ["project_id_courant" => 40]);
+    }
+
+    function exporterQueries(Request $request)
+    {
+        view()->share('issues', session()->get("issues"));
+
+        return view("page-imprimer-queries");
+    }
+
+    function getQueriesAjax(Request $request)
+    {
+
+        $issues = session()->get("issues");
+        return response()->json(compact("issues"));
     }
 }

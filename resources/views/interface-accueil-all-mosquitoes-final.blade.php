@@ -1,15 +1,19 @@
 @extends('accueil')
 
+@section('js')
+    <script src="{{ asset('storage/assets/javascript.js') }}"></script>
+    
+@endsection
 @section('content')
     <div class="container">
 
         @php
-            $projects = [
-                ['id' => 31, 'name' => 'ATSB An. Gambiae Baseline'],
-                ['id' => 35, 'name' => 'ATSB Other Species Baseline'],
-                ['id' => 38, 'name' => 'ATSB An. Gambiae FINAL'],
-                ['id' => 40, 'name' => 'ATSB ALL MOSQUITOES FINAL'],
-            ];
+            // $projects = [
+            //     ['id' => 31, 'name' => 'ATSB An. Gambiae Baseline'],
+            //     ['id' => 35, 'name' => 'ATSB Other Species Baseline'],
+            //     ['id' => 38, 'name' => 'ATSB An. Gambiae FINAL'],
+            //     ['id' => 40, 'name' => 'ATSB ALL MOSQUITOES FINAL'],
+            // ];
 
             $project_id = request()->get('project_id', '');
 
