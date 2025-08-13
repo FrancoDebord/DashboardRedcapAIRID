@@ -4,9 +4,24 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Dashboard — MonApp</title>
+    <title>Dashboard — ATSB Projects</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <meta name="description" content="DashboardProjectRedCap - Accueil">
+    <meta name="keywords" content="RedCap, Dashboard, Projet, Accueil">
+    <meta name="author" content="DashboardProjectRedCap Team">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="app_url" content="{{ \Request::getSchemeAndHttpHost() }}/" />
+
+
+    {{-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script> --}}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js/dist/Chart.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.2/css/dataTables.dataTables.min.css">
+
+    <link rel="stylesheet" href="{{ asset('storage/assets/style.css') }}">
+    <link rel="shortcut icon" href="{{ asset('storage/assets/logo/airid.png') }}" type="image/x-icon">
 </head>
 
 <body class="min-h-screen bg-gray-50">
@@ -27,13 +42,17 @@
 
     <!-- Main -->
     <main class="max-w-7xl mx-auto px-4 py-8 space-y-8">
+
+        @yield('content')
         <!-- KPI Cards -->
-        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {{-- <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div class="bg-white rounded-lg shadow p-6">
                 <h2 class="text-sm font-medium text-gray-500">Revenus</h2>
                 <p class="mt-2 text-3xl font-bold text-gray-800">12 450 €</p>
-                <p class="mt-1 text-xs text-green-600">+8% ce mois</p>
+               
+                <p class="mt-1 text-xs text-green-600">+38% ce mois</p>
             </div>
+            
             <div class="bg-white rounded-lg shadow p-6">
                 <h2 class="text-sm font-medium text-gray-500">Nouveaux Clients</h2>
                 <p class="mt-2 text-3xl font-bold text-gray-800">120</p>
@@ -88,11 +107,11 @@
                     </tbody>
                 </table>
             </div>
-        </section>
+        </section> --}}
     </main>
 
     <!-- Chart Script -->
-    <script>
+    {{-- <script>
         const ctx = document.getElementById('salesChart').getContext('2d');
         new Chart(ctx, {
             type: 'bar',
@@ -115,7 +134,17 @@
                 }
             }
         });
-    </script>
+    </script> --}}
+
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-labels@1.2.0/dist/chartjs-plugin-labels.min.js"></script>
+
+    <script src="https://cdn.datatables.net/2.3.2/js/dataTables.min.js"></script>
+
+    @yield('js')
 </body>
 
 </html>

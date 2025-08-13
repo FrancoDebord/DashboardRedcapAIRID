@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 class AccueilProjectController extends Controller
 {
 
+    protected $staffs_atsb;
+
     public function __construct()
     {
 
@@ -31,6 +33,22 @@ class AccueilProjectController extends Controller
             ['id' => 35, 'name' => 'ATSB Other Species Baseline'],
             ['id' => 38, 'name' => 'ATSB An. Gambiae FINAL'],
             ['id' => 40, 'name' => 'ATSB ALL MOSQUITOES FINAL'],
+        ];
+
+        $this->staffs_atsb = [
+            "Y-B" => "YOVOGAN Boulais",
+            "G-C" => "GOMAVO Constant",
+            "AOD" => "AMOUSSA OLOUBO Djibril Abiodoun",
+            "GKJ" => "GOUNOU Kpagnero I. Joachelle",
+            "Y-M" => "YAMADJAKO Mélis",
+            "A-J" => "AKPI Joël",
+            "G-Y" => "GNIMANTAMOU Yokahipé",
+            "A-E" => "ADJAKOTAN Elodie",
+            "T-E" => "TANTOUKOUTE Eloé",
+            "H-G" => "HOUETOHOSSOU Georgine",
+            "O-A" => "ODJO Aicha",
+            "A-R" => "AKOTON Romaric",
+            "A-I" => "AHOGNI Idelphonse"
         ];
 
         view()->share("projects", $projects);
@@ -2245,6 +2263,9 @@ class AccueilProjectController extends Controller
         $issues = [];
         $tablets = [];
         $formulaires = [];
+        $errors_codes = [];
+        $initials = [];
+
 
         foreach ($records as $record) {
             foreach ($metadata as $field) {
@@ -2336,6 +2357,15 @@ class AccueilProjectController extends Controller
                                 $tablets[] = $tablet;
                             }
 
+                            if (!in_array("REQUIRED_001", $errors_codes)) {
+
+                                $errors_codes[] = "REQUIRED_001";
+                            }
+                            // if (!in_array($record["initials"], $initials)) {
+
+                            //     $initials[] = $record["initials"];
+                            // }
+
                             $issues[] = [
                                 "query_code" => "REQUIRED_001",
                                 "query_date" => date("Y-m-d"),
@@ -2365,6 +2395,16 @@ class AccueilProjectController extends Controller
                                         $tablets[] = $tablet;
                                     }
 
+                                    if (!in_array("EMAIL_ERROR", $errors_codes)) {
+
+                                        $errors_codes[] = "EMAIL_ERROR";
+                                    }
+
+                                    // if (!in_array($record["initials"], $initials)) {
+
+                                    //     $initials[] = $record["initials"];
+                                    // }
+
                                     $issues[] = [
                                         "query_code" => "EMAIL_ERROR",
                                         "query_date" => date("Y-m-d"),
@@ -2388,6 +2428,16 @@ class AccueilProjectController extends Controller
 
                                         $tablets[] = $tablet;
                                     }
+
+                                    if (!in_array("INTEGER_ERROR", $errors_codes)) {
+
+                                        $errors_codes[] = "INTEGER_ERROR";
+                                    }
+
+                                    // if (!in_array($record["initials"], $initials)) {
+
+                                    //     $initials[] = $record["initials"];
+                                    // }
 
                                     $issues[] = [
                                         "query_code" => "INTEGER_ERROR",
@@ -2415,6 +2465,16 @@ class AccueilProjectController extends Controller
                                         $tablets[] = $tablet;
                                     }
 
+                                    if (!in_array("NUMBER_ERROR", $errors_codes)) {
+
+                                        $errors_codes[] = "NUMBER_ERROR";
+                                    }
+
+                                    // if (!in_array($record["initials"], $initials)) {
+
+                                    //     $initials[] = $record["initials"];
+                                    // }
+
                                     $issues[] = [
                                         "query_code" => "NUMBER_ERROR",
                                         "query_date" => date("Y-m-d"),
@@ -2439,6 +2499,16 @@ class AccueilProjectController extends Controller
 
                                         $tablets[] = $tablet;
                                     }
+
+                                    if (!in_array("DATE_FORMAT_ERROR", $errors_codes)) {
+
+                                        $errors_codes[] = "DATE_FORMAT_ERROR";
+                                    }
+
+                                    // if (!in_array($record["initials"], $initials)) {
+
+                                    //     $initials[] = $record["initials"];
+                                    // }
 
                                     $issues[] = [
                                         "query_code" => "DATE_FORMAT_ERROR",
@@ -2469,6 +2539,16 @@ class AccueilProjectController extends Controller
                                             $tablets[] = $tablet;
                                         }
 
+                                        if (!in_array("NUMBER_RANGE_ERROR", $errors_codes)) {
+
+                                            $errors_codes[] = "NUMBER_RANGE_ERROR";
+                                        }
+
+
+                                        // if (!in_array($record["initials"], $initials)) {
+
+                                        //     $initials[] = $record["initials"];
+                                        // }
                                         $issues[] = [
                                             "query_code" => "NUMBER_RANGE_ERROR",
                                             "query_date" => date("Y-m-d"),
@@ -2493,6 +2573,16 @@ class AccueilProjectController extends Controller
 
                                             $tablets[] = $tablet;
                                         }
+
+                                        if (!in_array("NUMBER_RANGE_ERROR", $errors_codes)) {
+
+                                            $errors_codes[] = "NUMBER_RANGE_ERROR";
+                                        }
+
+                                        // if (!in_array($record["initials"], $initials)) {
+
+                                        //     $initials[] = $record["initials"];
+                                        // }
 
                                         $issues[] = [
                                             "query_code" => "NUMBER_RANGE_ERROR",
@@ -2519,6 +2609,16 @@ class AccueilProjectController extends Controller
 
                             if ($value !== '') {
 
+                                if (!in_array("INCOHERENT", $errors_codes)) {
+
+                                    $errors_codes[] = "INCOHERENT";
+                                }
+
+                                // if (!in_array($record["initials"], $initials)) {
+
+                                //     $initials[] = $record["initials"];
+                                // }
+                                
                                 $issues[] = [
                                     "query_code" => "INCOHERENT",
                                     "query_date" => date("Y-m-d"),
@@ -2545,6 +2645,8 @@ class AccueilProjectController extends Controller
         view()->share('issues', $issues);
         view()->share('tablets', $tablets);
         view()->share('formulaires', $formulaires);
+        view()->share('errors_codes', $errors_codes);
+        view()->share('initials', $initials);
 
         return view('page-queries-baseline');
     }
@@ -2649,6 +2751,8 @@ class AccueilProjectController extends Controller
         $issues = [];
         $tablets = [];
         $formulaires = [];
+        $errors_codes = [];
+        $initials = [];
 
         //Vérification des données uniques
         foreach ($infos_uniques as $record) {
@@ -2741,6 +2845,16 @@ class AccueilProjectController extends Controller
                                 $tablets[] = $tablet;
                             }
 
+                            if (!in_array("REQUIRED_001", $errors_codes)) {
+
+                                $errors_codes[] = "REQUIRED_001";
+                            }
+
+                            if (!in_array($record["initials"], $initials)) {
+
+                                $initials[] = $record["initials"];
+                            }
+
                             $issues[] = [
                                 "query_code" => "REQUIRED_001",
                                 "query_date" => date("Y-m-d"),
@@ -2769,6 +2883,16 @@ class AccueilProjectController extends Controller
                                         $tablets[] = $tablet;
                                     }
 
+                                    if (!in_array("EMAIL_ERROR", $errors_codes)) {
+
+                                        $errors_codes[] = "EMAIL_ERROR";
+                                    }
+
+                                    if (!in_array($record["initials"], $initials)) {
+
+                                        $initials[] = $record["initials"];
+                                    }
+
                                     $issues[] = [
                                         "query_code" => "EMAIL_ERROR",
                                         "query_date" => date("Y-m-d"),
@@ -2791,6 +2915,16 @@ class AccueilProjectController extends Controller
                                     if (!in_array($tablet, $tablets)) {
 
                                         $tablets[] = $tablet;
+                                    }
+
+                                    if (!in_array("INTEGER_ERROR", $errors_codes)) {
+
+                                        $errors_codes[] = "INTEGER_ERROR";
+                                    }
+
+                                    if (!in_array($record["initials"], $initials)) {
+
+                                        $initials[] = $record["initials"];
                                     }
 
                                     $issues[] = [
@@ -2817,6 +2951,16 @@ class AccueilProjectController extends Controller
                                         $tablets[] = $tablet;
                                     }
 
+                                    if (!in_array("NUMBER_ERROR", $errors_codes)) {
+
+                                        $errors_codes[] = "NUMBER_ERROR";
+                                    }
+
+                                    if (!in_array($record["initials"], $initials)) {
+
+                                        $initials[] = $record["initials"];
+                                    }
+
                                     $issues[] = [
                                         "query_code" => "NUMBER_ERROR",
                                         "query_date" => date("Y-m-d"),
@@ -2840,6 +2984,16 @@ class AccueilProjectController extends Controller
                                     if (!in_array($tablet, $tablets)) {
 
                                         $tablets[] = $tablet;
+                                    }
+
+                                    if (!in_array("DATE_FORMAT_ERROR", $errors_codes)) {
+
+                                        $errors_codes[] = "DATE_FORMAT_ERROR";
+                                    }
+
+                                    if (!in_array($record["initials"], $initials)) {
+
+                                        $initials[] = $record["initials"];
                                     }
 
                                     $issues[] = [
@@ -2870,6 +3024,16 @@ class AccueilProjectController extends Controller
                                             $tablets[] = $tablet;
                                         }
 
+                                        if (!in_array("NUMBER_RANGE_ERROR", $errors_codes)) {
+
+                                            $errors_codes[] = "NUMBER_RANGE_ERROR";
+                                        }
+
+                                        if (!in_array($record["initials"], $initials)) {
+
+                                            $initials[] = $record["initials"];
+                                        }
+
                                         $issues[] = [
                                             "query_code" => "NUMBER_RANGE_ERROR",
                                             "query_date" => date("Y-m-d"),
@@ -2893,6 +3057,16 @@ class AccueilProjectController extends Controller
                                         if (!in_array($tablet, $tablets)) {
 
                                             $tablets[] = $tablet;
+                                        }
+
+                                        if (!in_array("NUMBER_RANGE_ERROR", $errors_codes)) {
+
+                                            $errors_codes[] = "NUMBER_RANGE_ERROR";
+                                        }
+
+                                        if (!in_array($record["initials"], $initials)) {
+
+                                            $initials[] = $record["initials"];
                                         }
 
                                         $issues[] = [
@@ -3007,6 +3181,17 @@ class AccueilProjectController extends Controller
                                 $tablets[] = $tablet;
                             }
 
+                            if (!in_array("REQUIRED_001", $errors_codes)) {
+
+                                $errors_codes[] = "REQUIRED_001";
+                            }
+
+
+                            if (!in_array($record["initials"], $initials)) {
+
+                                $initials[] = $record["initials"];
+                            }
+
                             $issues[] = [
                                 "query_code" => "REQUIRED_001",
                                 "query_date" => date("Y-m-d"),
@@ -3035,6 +3220,15 @@ class AccueilProjectController extends Controller
                                         $tablets[] = $tablet;
                                     }
 
+                                    if (!in_array("EMAIL_ERROR", $errors_codes)) {
+
+                                        $errors_codes[] = "EMAIL_ERROR";
+                                    }
+                                    if (!in_array($record["initials"], $initials)) {
+
+                                        $initials[] = $record["initials"];
+                                    }
+
                                     $issues[] = [
                                         "query_code" => "EMAIL_ERROR",
                                         "query_date" => date("Y-m-d"),
@@ -3058,6 +3252,17 @@ class AccueilProjectController extends Controller
 
                                         $tablets[] = $tablet;
                                     }
+
+                                    if (!in_array("INTEGER_ERROR", $errors_codes)) {
+
+                                        $errors_codes[] = "INTEGER_ERROR";
+                                    }
+
+                                    if (!in_array($record["initials"], $initials)) {
+
+                                        $initials[] = $record["initials"];
+                                    }
+
 
                                     $issues[] = [
                                         "query_code" => "INTEGER_ERROR",
@@ -3084,6 +3289,16 @@ class AccueilProjectController extends Controller
                                         $tablets[] = $tablet;
                                     }
 
+                                    if (!in_array("NUMBER_ERROR", $errors_codes)) {
+
+                                        $errors_codes[] = "NUMBER_ERROR";
+                                    }
+
+                                    if (!in_array($record["initials"], $initials)) {
+
+                                        $initials[] = $record["initials"];
+                                    }
+
                                     $issues[] = [
                                         "query_code" => "NUMBER_ERROR",
                                         "query_date" => date("Y-m-d"),
@@ -3107,6 +3322,16 @@ class AccueilProjectController extends Controller
                                     if (!in_array($tablet, $tablets)) {
 
                                         $tablets[] = $tablet;
+                                    }
+
+                                    if (!in_array("DATE_FORMAT_ERROR", $errors_codes)) {
+
+                                        $errors_codes[] = "DATE_FORMAT_ERROR";
+                                    }
+
+                                    if (!in_array($record["initials"], $initials)) {
+
+                                        $initials[] = $record["initials"];
                                     }
 
                                     $issues[] = [
@@ -3137,6 +3362,16 @@ class AccueilProjectController extends Controller
                                             $tablets[] = $tablet;
                                         }
 
+                                        if (!in_array("NUMBER_RANGE_ERROR", $errors_codes)) {
+
+                                            $errors_codes[] = "NUMBER_RANGE_ERROR";
+                                        }
+
+                                        if (!in_array($record["initials"], $initials)) {
+
+                                            $initials[] = $record["initials"];
+                                        }
+
                                         $issues[] = [
                                             "query_code" => "NUMBER_RANGE_ERROR",
                                             "query_date" => date("Y-m-d"),
@@ -3160,6 +3395,17 @@ class AccueilProjectController extends Controller
                                         if (!in_array($tablet, $tablets)) {
 
                                             $tablets[] = $tablet;
+                                        }
+
+
+                                        if (!in_array("NUMBER_RANGE_ERROR", $errors_codes)) {
+
+                                            $errors_codes[] = "NUMBER_RANGE_ERROR";
+                                        }
+
+                                        if (!in_array($record["initials"], $initials)) {
+
+                                            $initials[] = $record["initials"];
                                         }
 
                                         $issues[] = [
@@ -3187,6 +3433,16 @@ class AccueilProjectController extends Controller
 
                             if ($value !== '') {
 
+                                if (!in_array("INCOHERENT", $errors_codes)) {
+
+                                    $errors_codes[] = "INCOHERENT";
+                                }
+
+                                if (!in_array($record["initials"], $initials)) {
+
+                                    $initials[] = $record["initials"];
+                                }
+
                                 $issues[] = [
                                     "query_code" => "INCOHERENT",
                                     "query_date" => date("Y-m-d"),
@@ -3212,6 +3468,8 @@ class AccueilProjectController extends Controller
         view()->share('issues', $issues);
         view()->share('tablets', $tablets);
         view()->share('formulaires', $formulaires);
+        view()->share('errors_codes', $errors_codes);
+        view()->share('initials', $initials);
 
         return view("page-queries-baseline", ["project_id_courant" => 38]);
     }
@@ -3334,6 +3592,8 @@ class AccueilProjectController extends Controller
         $issues = [];
         $tablets = [];
         $formulaires = [];
+        $errors_codes = [];
+        $initials = [];
 
         //Vérification des données uniques
         foreach ($infos_uniques as $record) {
@@ -3426,6 +3686,16 @@ class AccueilProjectController extends Controller
                                 $tablets[] = $tablet;
                             }
 
+                            if (!in_array("REQUIRED_001", $errors_codes)) {
+
+                                $errors_codes[] = "REQUIRED_001";
+                            }
+
+                            if (!in_array($record["initials"], $initials)) {
+
+                                $initials[] = $record["initials"];
+                            }
+
                             $issues[] = [
                                 "query_code" => "REQUIRED_001",
                                 "query_date" => date("Y-m-d"),
@@ -3454,6 +3724,17 @@ class AccueilProjectController extends Controller
                                         $tablets[] = $tablet;
                                     }
 
+                                    if (!in_array("EMAIL_ERROR", $errors_codes)) {
+
+                                        $errors_codes[] = "EMAIL_ERROR";
+                                    }
+
+
+                                    if (!in_array($record["initials"], $initials)) {
+
+                                        $initials[] = $record["initials"];
+                                    }
+
                                     $issues[] = [
                                         "query_code" => "EMAIL_ERROR",
                                         "query_date" => date("Y-m-d"),
@@ -3476,6 +3757,16 @@ class AccueilProjectController extends Controller
                                     if (!in_array($tablet, $tablets)) {
 
                                         $tablets[] = $tablet;
+                                    }
+
+                                    if (!in_array("INTEGER_ERROR", $errors_codes)) {
+
+                                        $errors_codes[] = "INTEGER_ERROR";
+                                    }
+
+                                    if (!in_array($record["initials"], $initials)) {
+
+                                        $initials[] = $record["initials"];
                                     }
 
                                     $issues[] = [
@@ -3502,6 +3793,16 @@ class AccueilProjectController extends Controller
                                         $tablets[] = $tablet;
                                     }
 
+                                    if (!in_array("NUMBER_ERROR", $errors_codes)) {
+
+                                        $errors_codes[] = "NUMBER_ERROR";
+                                    }
+
+                                    if (!in_array($record["initials"], $initials)) {
+
+                                        $initials[] = $record["initials"];
+                                    }
+
                                     $issues[] = [
                                         "query_code" => "NUMBER_ERROR",
                                         "query_date" => date("Y-m-d"),
@@ -3526,6 +3827,17 @@ class AccueilProjectController extends Controller
 
                                         $tablets[] = $tablet;
                                     }
+
+                                    if (!in_array("DATE_FORMAT_ERROR", $errors_codes)) {
+
+                                        $errors_codes[] = "DATE_FORMAT_ERROR";
+                                    }
+
+                                    if (!in_array($record["initials"], $initials)) {
+
+                                        $initials[] = $record["initials"];
+                                    }
+
 
                                     $issues[] = [
                                         "query_code" => "DATE_FORMAT_ERROR",
@@ -3555,6 +3867,16 @@ class AccueilProjectController extends Controller
                                             $tablets[] = $tablet;
                                         }
 
+                                        if (!in_array("NUMBER_RANGE_ERROR", $errors_codes)) {
+
+                                            $errors_codes[] = "NUMBER_RANGE_ERROR";
+                                        }
+
+                                        if (!in_array($record["initials"], $initials)) {
+
+                                            $initials[] = $record["initials"];
+                                        }
+
                                         $issues[] = [
                                             "query_code" => "NUMBER_RANGE_ERROR",
                                             "query_date" => date("Y-m-d"),
@@ -3580,6 +3902,16 @@ class AccueilProjectController extends Controller
                                             $tablets[] = $tablet;
                                         }
 
+                                        if (!in_array("NUMBER_RANGE_ERROR", $errors_codes)) {
+
+                                            $errors_codes[] = "NUMBER_RANGE_ERROR";
+                                        }
+
+                                        if (!in_array($record["initials"], $initials)) {
+
+                                            $initials[] = $record["initials"];
+                                        }
+
                                         $issues[] = [
                                             "query_code" => "NUMBER_RANGE_ERROR",
                                             "query_date" => date("Y-m-d"),
@@ -3602,16 +3934,16 @@ class AccueilProjectController extends Controller
             }
         }
 
-        //Vérification des données du laboratoire
+        //Vérification des données du summary detail mosquitoes
         foreach ($formulaire_summary_data_mosquitoes as $record) {
 
-             $index_ligne = array_search($record["mosquito_code"], array_column($infos_uniques, "mosquito_code"));
+            $index_ligne = array_search($record["mosquito_code"], array_column($infos_uniques, "mosquito_code"));
 
             foreach ($metadata_summary as $field) {
 
                 $fieldName = $field['field_name'];
 
-               
+
                 if (!in_array($fieldName, $variables_anepas_considerer)) {
 
 
@@ -3700,11 +4032,21 @@ class AccueilProjectController extends Controller
                     if ($branchingPass && $field['required_field'] === 'y') {
                         if ($value === '') {
 
-                            $tablet = strtoupper($record["tablet_id"]);
+                            $tablet = strtoupper($infos_uniques[$index_ligne]["tablet_id"]);
 
                             if (!in_array($tablet, $tablets)) {
 
                                 $tablets[] = $tablet;
+                            }
+
+                            if (!in_array("REQUIRED_001", $errors_codes)) {
+
+                                $errors_codes[] = "REQUIRED_001";
+                            }
+
+                            if (!in_array($infos_uniques[$index_ligne]["initials"], $initials)) {
+
+                                $initials[] = $infos_uniques[$index_ligne]["initials"];
                             }
 
                             $issues[] = [
@@ -3728,12 +4070,23 @@ class AccueilProjectController extends Controller
 
                                 if ($validationType === 'email' && !filter_var($value, FILTER_VALIDATE_EMAIL)) {
 
-                                    $tablet = strtoupper($record["tablet_id"]);
+                                    $tablet = strtoupper($infos_uniques[$index_ligne]["tablet_id"]);
 
                                     if (!in_array($tablet, $tablets)) {
 
                                         $tablets[] = $tablet;
                                     }
+
+                                    if (!in_array("EMAIL_ERROR", $errors_codes)) {
+
+                                        $errors_codes[] = "EMAIL_ERROR";
+                                    }
+
+                                    if (!in_array($infos_uniques[$index_ligne]["initials"], $initials)) {
+
+                                        $initials[] = $infos_uniques[$index_ligne]["initials"];
+                                    }
+
 
                                     $issues[] = [
                                         "query_code" => "EMAIL_ERROR",
@@ -3752,11 +4105,21 @@ class AccueilProjectController extends Controller
                                 }
                                 if ($validationType === 'integer' && !ctype_digit($value)) {
 
-                                    $tablet = strtoupper($record["tablet_id"]);
+                                    $tablet = strtoupper($infos_uniques[$index_ligne]["tablet_id"]);
 
                                     if (!in_array($tablet, $tablets)) {
 
                                         $tablets[] = $tablet;
+                                    }
+
+                                    if (!in_array("INTEGER_ERROR", $errors_codes)) {
+
+                                        $errors_codes[] = "INTEGER_ERROR";
+                                    }
+
+                                    if (!in_array($infos_uniques[$index_ligne]["initials"], $initials)) {
+
+                                        $initials[] = $infos_uniques[$index_ligne]["initials"];
                                     }
 
                                     $issues[] = [
@@ -3777,12 +4140,24 @@ class AccueilProjectController extends Controller
 
                                 if ($validationType === 'number' && !is_numeric($value)) {
 
-                                    $tablet = strtoupper($record["tablet_id"]);
+                                    $tablet = strtoupper($infos_uniques[$index_ligne]["tablet_id"]);
 
                                     if (!in_array($tablet, $tablets)) {
 
                                         $tablets[] = $tablet;
                                     }
+
+
+                                    if (!in_array("NUMBER_ERROR", $errors_codes)) {
+
+                                        $errors_codes[] = "NUMBER_ERROR";
+                                    }
+
+                                    if (!in_array($infos_uniques[$index_ligne]["initials"], $initials)) {
+
+                                        $initials[] = $infos_uniques[$index_ligne]["initials"];
+                                    }
+
 
                                     $issues[] = [
                                         "query_code" => "NUMBER_ERROR",
@@ -3802,11 +4177,22 @@ class AccueilProjectController extends Controller
                                 if ($validationType === 'date_ymd' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
 
 
-                                    $tablet = strtoupper($record["tablet_id"]);
+                                    $tablet = strtoupper($infos_uniques[$index_ligne]["tablet_id"]);
 
                                     if (!in_array($tablet, $tablets)) {
 
                                         $tablets[] = $tablet;
+                                    }
+
+                                    if (!in_array("DATE_FORMAT_ERROR", $errors_codes)) {
+
+                                        $errors_codes[] = "DATE_FORMAT_ERROR";
+                                    }
+
+
+                                    if (!in_array($infos_uniques[$index_ligne]["initials"], $initials)) {
+
+                                        $initials[] = $infos_uniques[$index_ligne]["initials"];
                                     }
 
                                     $issues[] = [
@@ -3830,11 +4216,21 @@ class AccueilProjectController extends Controller
                                 if ($value !== '') {
                                     if (!empty($field['text_validation_min']) && is_numeric($value) && $value < $field['text_validation_min']) {
 
-                                        $tablet = strtoupper($record["tablet_id"]);
+                                        $tablet = strtoupper($infos_uniques[$index_ligne]["tablet_id"]);
 
                                         if (!in_array($tablet, $tablets)) {
 
                                             $tablets[] = $tablet;
+                                        }
+
+                                        if (!in_array("NUMBER_RANGE_ERROR", $errors_codes)) {
+
+                                            $errors_codes[] = "NUMBER_RANGE_ERROR";
+                                        }
+
+                                        if (!in_array($infos_uniques[$index_ligne]["initials"], $initials)) {
+
+                                            $initials[] = $infos_uniques[$index_ligne]["initials"];
                                         }
 
                                         $issues[] = [
@@ -3855,12 +4251,23 @@ class AccueilProjectController extends Controller
                                     }
                                     if (!empty($field['text_validation_max']) && is_numeric($value) && $value > $field['text_validation_max']) {
 
-                                        $tablet = strtoupper($record["tablet_id"]);
+                                        $tablet = strtoupper($infos_uniques[$index_ligne]["tablet_id"]);
 
                                         if (!in_array($tablet, $tablets)) {
 
                                             $tablets[] = $tablet;
                                         }
+
+                                        if (!in_array("NUMBER_RANGE_ERROR", $errors_codes)) {
+
+                                            $errors_codes[] = "NUMBER_RANGE_ERROR";
+                                        }
+
+                                        if (!in_array($infos_uniques[$index_ligne]["initials"], $initials)) {
+
+                                            $initials[] = $infos_uniques[$index_ligne]["initials"];
+                                        }
+
 
                                         $issues[] = [
                                             "query_code" => "NUMBER_RANGE_ERROR",
@@ -3887,6 +4294,24 @@ class AccueilProjectController extends Controller
 
                             if ($value !== '') {
 
+
+                                $tablet = strtoupper($infos_uniques[$index_ligne]["tablet_id"]);
+
+                                if (!in_array($tablet, $tablets)) {
+
+                                    $tablets[] = $tablet;
+                                }
+
+                                if (!in_array("INCOHERENT", $errors_codes)) {
+
+                                    $errors_codes[] = "INCOHERENT";
+                                }
+                                if (!in_array($infos_uniques[$index_ligne]["initials"], $initials)) {
+
+                                    $initials[] = $infos_uniques[$index_ligne]["initials"];
+                                }
+
+
                                 $issues[] = [
                                     "query_code" => "INCOHERENT",
                                     "query_date" => date("Y-m-d"),
@@ -3905,8 +4330,6 @@ class AccueilProjectController extends Controller
                     }
                 }
             }
-
-          
         }
 
         // Vérification des données par paramètre collecté avec les différentes modalités. 
@@ -3926,8 +4349,8 @@ class AccueilProjectController extends Controller
         ];
 
 
-        //Vérification des données du laboratoire
-        $compteur_ligne = 0;
+        //Vérification des données du second formulaire Summary_Detail_Mosquitoes
+        
         foreach ($formulaire_summary_data_mosquitoes as $record) {
 
             $compteur_ligne = array_search($record["mosquito_code"], array_column($infos_uniques, "mosquito_code"));
@@ -3951,9 +4374,20 @@ class AccueilProjectController extends Controller
 
 
                 if ($total_modalites != $valeur_total_max) {
+                    // dd($total_modalites,$valeur_total_max,$variable_total_max,$parametre,$infos_uniques[$compteur_ligne]['mosquito_code'],$record['redcap_repeat_instance'] );
 
                     $modalites = array_slice($list_modalites_et_total, 0, count($list_modalites_et_total) - 1);
                     $modalites = implode(",", $modalites);
+
+                    if (!in_array("INACURRATE_SUM", $errors_codes)) {
+
+                        $errors_codes[] = "INACURRATE_SUM";
+                    }
+
+                    if (!in_array($infos_uniques[$compteur_ligne]["initials"], $initials)) {
+
+                        $initials[] = $infos_uniques[$compteur_ligne]["initials"];
+                    }
 
                     $issues[] = [
                         "query_code" => "INACURRATE_SUM",
@@ -3970,7 +4404,60 @@ class AccueilProjectController extends Controller
                     ];
                 }
             }
+        }
 
+         //Vérification des données du second formulaire Summary_Detail_Mosquitoes en lien avec le formulaire infos_base_menage
+        foreach ($infos_uniques as $record) {
+
+            $compteur_ligne = array_search($record["mosquito_code"], array_column($infos_uniques, "mosquito_code"));
+
+            $nombre_total_de_moustiques_menage = $record["n_total_moustique"];
+
+            $summary_detail_mosquitoes_related = array_filter($formulaire_summary_data_mosquitoes,function($item) use ($record) {
+
+                return $item["mosquito_code"] === $record["mosquito_code"];
+            });
+
+            $column_n_mosquito_specie = array_column($summary_detail_mosquitoes_related,"n_mosquito_specie");
+            $somme_total_n_mosquito_specie = array_sum($column_n_mosquito_specie);
+
+            if($somme_total_n_mosquito_specie != $nombre_total_de_moustiques_menage){
+
+                if (!in_array($record["tablet_id"], $tablets)) {
+
+                        $tablets[] = $record["tablet_id"];
+                    }
+                if (!in_array("CROSSCHECK-SUM-INACCURATE", $errors_codes)) {
+
+                        $errors_codes[] = "CROSSCHECK-SUM-INACCURATE";
+                    }
+                    
+                if (!in_array("Infos_Base_Menage/Summary_Detail_Mosquitoes", $formulaires)) {
+
+                        $formulaires[] = "Infos_Base_Menage/Summary_Detail_Mosquitoes";
+                    }
+
+                    if (!in_array($record["initials"], $initials)) {
+
+                        $initials[] = $record["initials"];
+                    }
+
+                    $issues[] = [
+                        "query_code" => "CROSSCHECK-SUM-INACCURATE",
+                        "query_date" => date("Y-m-d"),
+                        "mosquito_code" => $record['mosquito_code'],
+                        "tablet_id" => strtoupper($record["tablet_id"]),
+                        "initials" => strtoupper($record["initials"] ?? "NA"),
+                        "redcap_event_name" => $record['redcap_event_name'] ?? "NA",
+                        "form" => "Infos_Base_Menage/Summary_Detail_Mosquitoes",
+                        "instance" => $record['redcap_repeat_instance'] ?? "NA",
+                        "description" => "La somme des moustiques répartis pour chaque espèce (<strong class='text-danger'>'$somme_total_n_mosquito_specie'</strong>) ne correspond pas au nombre total de moustiques collectés (<strong class='text-danger'>'$nombre_total_de_moustiques_menage'</strong>) dans le ménage.",
+                        "suggestion" => "Vérifier les nombres de moustiques saisis pour chaque espèce trouvée dans le ménage ainsi que le nombre total de moustiques collectés au sein du ménage.",
+                        "status" => "<strong class='text-danger'>Non Résolu</strong>",
+                    ];
+            }
+
+        
         }
 
 
@@ -3979,6 +4466,9 @@ class AccueilProjectController extends Controller
         view()->share('issues', $issues);
         view()->share('tablets', $tablets);
         view()->share('formulaires', $formulaires);
+        view()->share('errors_codes', $errors_codes);
+        view()->share('initials', $initials);
+
 
         return view("page-queries-baseline", ["project_id_courant" => 40]);
     }

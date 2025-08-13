@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
 
-    return view("dasbhoard");
+    return view("dashboard2");
     // return redirect()->route("pullDataFromRedCapAnGambiaeFINAL",["project_id"=>38]);
 });
 
