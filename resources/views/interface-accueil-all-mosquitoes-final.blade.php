@@ -93,7 +93,7 @@
     <div class="row mt-4">
         <div class="col">
             <h3>Données envoyées par date et par tablette</h3>
-            <table class="table table-striped">
+            <table class="table table-striped table-donnees-tablette">
                 <thead>
                     <tr>
                         <th>Date de Collecte</th>
@@ -148,7 +148,7 @@
     <div class="row mt-4">
         <div class="col">
             <h6>Tableau des <strong class="text-danger2">espèces</strong> par commune</h6>
-            <table class="table table-striped">
+            <table class="table table-striped ">
                 <thead>
                     <tr>
                         <th>Espèce</th>
@@ -161,16 +161,19 @@
                     @php
                         $total_species_bassila = array_sum($species_per_commune_bassila);
                         $total_species_zogbodomey = array_sum($species_per_commune_zogbodomey);
+
+                        $total_records_species = $total_species_bassila + $total_species_zogbodomey;
                     @endphp
 
                     @foreach ($species_per_commune_bassila as $species => $count)
                          @php
                         $total_zogbodomey = $species_per_commune_zogbodomey[$species] ?? 0 ;
+
                     @endphp
                         <tr>
                             <td>{{ $species }}</td>
-                            <td>{{ $count }} ({{ $total_records <> 0 ? round($count *100 / $total_records,2):"N/A" }}%)</td>
-                            <td>{{$total_zogbodomey}} ({{ ($total_records <> 0 ? round($total_zogbodomey * 100/$total_records,2):"N/A") }}%) </td>
+                            <td>{{ $count }} ({{ $total_records_species <> 0 ? round($count *100 / $total_records_species,2):"N/A" }}%)</td>
+                            <td>{{$total_zogbodomey}} ({{ ($total_records_species <> 0 ? round($total_zogbodomey * 100/$total_records_species,2):"N/A") }}%) </td>
                         </tr>
                     @endforeach
                     <tr>

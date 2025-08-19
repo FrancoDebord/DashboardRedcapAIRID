@@ -90,7 +90,7 @@
     <div class="row mt-4">
         <div class="col">
             <h3>Données envoyées par date et par tablette</h3>
-            <table class="table table-striped">
+            <table class="table table-striped table-donnees-tablette">
                 <thead>
                     <tr>
                         <th>Date de Collecte</th>
